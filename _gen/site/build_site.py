@@ -24,6 +24,24 @@ TOKEN = re.compile(
 
 POSTS = [
     {
+        "slug": "roborender",
+        "tag": "RoboRender",
+        "date": "2026-10-27",
+        "date_label": "2026.10.27",
+        "src": ROOT / "roborender-video-model.md",
+        "dek": "仿真继续负责几何和动作，视频模型负责把这条轨迹画成真实世界里的颜色。",
+        "thumb": "rr-frame.png",
+        "figures": [
+            ("rr-comparison.png", "第 40 帧。从左到右是深度、机械臂掩码、画出来的画面；三行是三个视角。提示词要一只红杯子，几何给的是椭圆，椭圆就变成了一把勺子。"),
+        ],
+        "videos": [
+            ("rr-comparison.mp4", "rr-comparison.png", "同一次 50 步推理的对比视频。每一行一个视角，列是深度、掩码、生成结果。"),
+            ("rr-head.mp4", "rr-head.jpg", "头部相机画出的 81 帧。"),
+            ("rr-left.mp4", "rr-left.jpg", "左手相机。"),
+            ("rr-right.mp4", "rr-right.jpg", "右手相机。"),
+        ],
+    },
+    {
         "slug": "worldscore",
         "tag": "WorldScore",
         "date": "2026-10-27",
@@ -208,6 +226,12 @@ def prepare_local_media() -> None:
         "black-src.mp4": GARDEN / "ctrl-world" / "results" / "videos" / "time_20261025_155936_traj_18599_14_5_Pick_the_black_thing_from_the_.mp4",
         "towel-src.mp4": GARDEN / "ctrl-world" / "results" / "videos" / "time_20261025_160225_traj_199_8_5_Move_the_green_towel_to_the_ri.mp4",
         "ws-overview.mp4": GARDEN / "worldscore" / "assets" / "overview.mp4",
+        "rr-comparison.png": GARDEN / "roborender-video-model" / "results" / "frame40_comparison.png",
+        "rr-frame.png": GARDEN / "roborender-video-model" / "results" / "frame40_generated_hand_left.png",
+        "rr-comparison.mp4": GARDEN / "roborender-video-model" / "results" / "comparison.mp4",
+        "rr-head.mp4": GARDEN / "roborender-video-model" / "results" / "generated_head_color.mp4",
+        "rr-left.mp4": GARDEN / "roborender-video-model" / "results" / "generated_hand_left.mp4",
+        "rr-right.mp4": GARDEN / "roborender-video-model" / "results" / "generated_hand_right.mp4",
     }
     for name, src in pairs.items():
         if not src.exists():
@@ -217,6 +241,9 @@ def prepare_local_media() -> None:
     poster(WORK / "black-src.mp4", WORK / "frame-ctrl-black.jpg", "1.5")
     poster(WORK / "towel-src.mp4", WORK / "frame-ctrl-towel.jpg", "1.5")
     poster(WORK / "ws-overview.mp4", WORK / "frame-ws-overview.jpg", "6")
+    poster(WORK / "rr-head.mp4", WORK / "rr-head.jpg", "1")
+    poster(WORK / "rr-left.mp4", WORK / "rr-left.jpg", "1")
+    poster(WORK / "rr-right.mp4", WORK / "rr-right.jpg", "1")
 
 
 def build() -> None:
@@ -273,7 +300,7 @@ def build() -> None:
     index_body = f"""{header('')}
 <main class="wrap">
   <section class="hero">
-    <h1>四次实验，四篇笔记。</h1>
+    <h1>五次实验，五篇笔记。</h1>
     <p class="lede">每一篇是一次工作：在一张 Radeon Pro W7900 上把世界模型跑通，再把过程写下来。</p>
   </section>
   <section class="grid">
