@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>一个咖啡馆推近镜头，值多少分 · RoboGarden</title>
+  <meta name="description" content="镜头往前推的时候，吧台还在不在原来的地方。WorldScore 把这件事拆开打分。">
+  <meta name="author" content="Charles Yang">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="wordmark" href="../index.html">Robo<span>Garden</span></a>
+  <a class="who" href="../index.html">Charles Yang</a>
+</header>
+
+<article class="post">
+  <a class="back" href="../index.html">← 全部笔记</a>
+  <p class="kicker">WorldScore · 2026.10.27</p>
+  <h1>一个咖啡馆推近镜头，值多少分</h1>
+  <p class="byline"><strong>Charles Yang</strong></p>
+  <div class="figures">
+    <figure>
+  <img src="../media/worldscore/ws-figure.png" alt="WorldScore 要覆盖的那些世界：室内和室外、写实和风格化。图来自 WorldScore 项目页。">
+  <figcaption>WorldScore 要覆盖的那些世界：室内和室外、写实和风格化。图来自 WorldScore 项目页。</figcaption>
+</figure>
+  </div>
+  <div class="videos">
+    <figure>
+  <video controls playsinline preload="metadata" poster="../media/worldscore/frame-ws-overview.jpg">
+    <source src="../media/worldscore/ws-overview.mp4" type="video/mp4">
+  </video>
+  <figcaption>基准怎么考下一条镜头：从一张起始图出发，模型得按相机指令长出下一个场景。</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../media/worldscore/frame-ws-camera.jpg">
+    <source src="../media/worldscore/ws-camera.mp4" type="video/mp4">
+  </video>
+  <figcaption>相机控制的对照。同一句指令，一边听得懂，一边把湖面和山形换了一套。</figcaption>
+</figure>
+  </div>
+  <div class="prose">
+    <p>视频模型现在很会把一秒钟拍得像样。窗帘在动，光在桌上走，人脸不至于在第三帧融化。麻烦出在你把这当成一个世界的时候。世界不是一段好看的片子。世界是你把镜头往前推，吧台还在原来的地方；你让一头象抬起鼻子，抬起来的是鼻子，不是整间屋子跟着抖。WorldScore 就是来拆这句漂亮话的。它不给单段视频打“像不像真的”这种总分，它把“这是不是一个地方”拆成相机听不听话、物体还在不在、三维还连不连得上。</p>
+<p>论文是 ICCV 2025 的 *WorldScore: A Unified Evaluation Benchmark for World Generation*，作者 Haoyi Duan、Hong-Xing Yu、Sirui Chen、Li Fei-Fei、Jiajun Wu。赌注下得很具体：生成模型如果只在单段观感上竞争，排行榜会奖励会闪的模型，惩罚肯把房间记住的模型。WorldScore 把评测对象从“这段视频好不好看”换成“给定一条相机或物体指令，生成出来的序列是不是在执行它”。</p>
+<h2>它到底在考什么</h2>
+<p>基准分两本账。静态账有 2000 条：一张起始图，一条相机路径，路径是推近、拉远、平移、环绕、横摇这一类，场景本身不该自己长腿跑掉。动态账有 1000 条：物体要按文本动起来，相机往往是钉死的，免得模型用晃镜头冒充动作。每条都不是“生成一段就行”，而是生成之后拿一组度量去对指令。</p>
+<p>静态这边，相机控制交给 DROID-SLAM。DROID 是一个稠密的视觉 SLAM：它在帧间建相关体，用可微的束调整把相机位姿和逆深度一起修。WorldScore 拿它估计出来的轨迹，去比数据集要求的那条轨迹，旋转误差和平移误差再归一成一个分。这是个老实的选择。你要是用光流的平均值假装相机动了，模型可以把整个画面平移过去交差；位姿才问得了“镜头是不是按你说的推近”。三维一致性再把同一套 DROID 几何拿来做重投影误差：上一帧的点，按估计的位姿投到下一帧，还落不落在它该在的地方。 光度一致性那一项不看位姿，看 SEA-RAFT 算出来的光流端点误差，专门抓那种几何上说得通、纹理却在闪的画面。</p>
+<p>物体控制是另一回事。指令里点了名的东西，应该还在画面里，而且不该无故多出一桌。这里用的是 GroundingDINO：一个把文本 token 和图像 token 做跨模态注意力的检测器，文本骨干是 BERT，检测头在多尺度特征上做可变形注意力。它不负责“像不像”，它负责“你说的椅子还在不在”。内容对齐是给跨场景的：相机路径把你带进另一个房间时，CLIP 看生成内容和文本是不是还在说同一件事。同一场景里的推近不考这一项，因为房间没换，对齐几乎是送分题，考了反而把相机分稀释掉。风格用 VGG-19 的 Gram 矩阵，看纹理统计在帧间漂不漂。主观质量是 CLIP-IQA+ 和 CLIP 美学分，这是唯一还愿意谈论“好不好看”的地方，而且它被关在自己的格子里，不能把相机分抬上去。</p>
+<p>动态账换了一套问题。动作准不准，靠 SAM 2 在视频里把被点名的物体跟住，再看 SEA-RAFT 的光流是不是朝指令说的方向、以说得通的幅度在走。动作大不大是光流的幅度，防止模型交一张几乎静止的图还说自己完成了。动作顺不顺交给 VFIMamba：用一版带选择性扫描的视频插帧模型去猜中间帧，再拿 SSIM 和 LPIPS 比真实的下一帧。插得上，说明运动在时间上是连续的；插不上，说明中间有一帧是跳出来的。</p>
+<p>这些度量合在一起，才是 WorldScore 的静态分和动态分。单个 CLIP 分可以很高，同时相机完全没听指令。排行榜把这件事摊开，就是为了让这种模型没地方躲。</p>
+<h2>相机那一项其实在解一个尺度</h2>
+<p>DROID 出来的轨迹是单目的。单目 SLAM 的平移可以整体乘一个常数，画面完全一样。数据集里的相机路径却是有尺度的：推近多少、环绕半径多少，都写在轨迹里。两边不先对齐尺度，旋转也许还能比，平移一比就是废话。WorldScore 的做法是把估计位姿和目标位姿都放进 SE(3)，用 cvxpy 解一个尺度，再算旋转误差和平移误差。标定写死成焦距 500、主点在 256。这不是这张图的真实内参，是评测协议：所有生成器都用同一把尺子，谁也不能靠“我的焦距更准”占便宜。</p>
+<p>重投影用的是同一份几何。有了位姿和逆深度，就能把一帧的像素投到下一帧。投偏了，说明要么相机估歪了，要么生成出来的场景在两帧之间换了形状。光度那一项故意不看这个。SEA-RAFT 是在光流上做迭代残差更新的模型，权重是 TartanAir 到 Spring 那条线的中号检查点。它只问像素从哪挪到哪，不问这挪动能不能用一个刚体相机解释。所以一个模型可以相机分很高、光度分很差：轨迹对了，砖缝在闪。也可以反过来。两项分开，就是为了不让一种错给另一种打掩护。</p>
+<p>物体控制不用分割大模型。静态这条路上，活着的检测器是 GroundingDINO，不是那份看起来很显眼、其实没被加载的 SAM 权重。文本先过 BERT，特殊 token 把句子切成短语，短语之间的注意力被一块三维 mask 挡住，免得“椅子”和“窗户”在编码器里搅成一团。图像侧是多尺度特征。可变形注意力不在整张特征图上做稠密相关，它让每个查询预测一组采样偏移和权重，用双线性采样把值取回来再加权求和。偏移预测错了，框就漂；短语 mask 没了，文本就不再按物体起作用。静态分里的物体控制，问的就是这些框还在不在指令点过名的地方。</p>
+<p>动态分把 SAM 2 请回来，但是请到另一项上。SAM 2 的图像编码器是 Hiera，记忆库存过去帧的对象指针，视频预测器按帧往下跟。跟住之后，光流告诉你这块掩膜里的像素在往哪走。运动准确性比的是这个走向和文本里的动词，不是掩膜好不好看。运动幅度是另一格，专门对付“物体没动、分数靠掩膜边缘的噪声撑着”的情况。运动平滑则把时间交回去：VFIMamba 在两帧之间做选择性扫描，状态沿时间更新，再用插出来的中间帧和真实帧比结构相似和感知距离。扫描本身是一条递推，不是一个更花的网络。后面移植时换成纯 PyTorch 的参考递推，比的还是这件事。</p>
+<p>每一项先落在自己的物理单位上，再按基准设定的区间归一到 0 到 1，汇总时乘 100。所以你看到的 89 和 25 不是同一种误差的两种读法，是两条不能互相抵消的轴。静态总分只平均静态那些轴，动态总分只平均动态那些轴。一个会推镜头、不会让大象动的模型，就该一边高一边低。</p>
+<p>归一本身也在选边。相机误差是一对：旋转和位移。旋转先夹到 0 和 15 之间，位移夹到 0 和 0.5 之间，越低越好，所以各自变成“离最差还有多远”，然后取几何平均。几何平均比算术平均更不留情。旋转几乎完美、位移一塌糊涂的时候，算术平均还会给你一个好看的中间数，几何平均会被那个差的轴拽下去。世界不该因为镜头转对了方向，就原谅你推进去的距离完全不对。运动平滑是另一组三元组，帧间的插值误差、结构相似、感知距离，这三项用算术平均，因为它们描述的是同一次插帧的三个侧面，不是两条可以互相冒充的指令。</p>
+<p>CLIP 那几项，包括内容对齐、主观质量、运动准确性、光流幅度，不走经验最大最小值。它们先对一份参考分布做 z 分数，再线性映到一个故意收窄的区间，很多是 0.25 到 0.75，最后再夹到 0 和 1。收窄是为了不让“画面好看”在总分里一票否决相机。你可以把美学分刷得很高，它在总分里的杠杆是被截过的。检测、重投影、Gram 矩阵走的是另一条：夹到经验范围，线性拉开，误差类再取反。物体检测的经验范围就是 0 到 1，所以它几乎是原样进总分。检测器说只对上四分之一，总分里就是 25，没有第二次化妆。</p>
+<p>路径的名字也不是装饰。<code>push_in</code> 和左右环绕被标成场景内：一个房间，镜头在里面动，内容对齐直接跳过。拉远、平移、横摇被标成场景间：镜头有权把你带到旁边的空间，这时候 CLIP 才出来问，新看到的东西是不是文本里承诺的那个。固定相机是第三条，留给动态样本。这个分类比“所有视频用同一套分”诚实。推近本来就不该靠内容对齐拿分，拉远本来就该为新露出来的墙负责。</p>
+<p>把咖啡馆那一条在纸上走完，基准在防什么就清楚了。起始是一张写实的室内用餐图。指令是推近，外加一切不许自己动。生成出 49 帧之后，DROID 先在帧间做相关，再把位姿和逆深度放进束调整里磨。磨出来的轨迹和“往前推”比旋转、比尺度对齐之后的位移。这一步过了，只说明镜头大概往前了。重投影接着问：吧台上的一点，按这个位姿投到下一帧，还在不在杯子旁边。光度再问：即便点对上了，砖缝和木纹有没有在两帧之间换了一套。GroundingDINO 拿“椅子、桌子、吧台”这些短语去框，框丢了就是物体控制往下掉，不管这段视频多像一条广告。Gram 矩阵看风格统计漂不漂，CLIP-IQA 和美学分最后才被允许说话，而且杠杆是被收窄过的。推近不考内容对齐，因为房间没换，考了等于送分。</p>
+<p>大象那一条把同一套纪律翻过来。相机固定，所以你不能靠推镜头假装动物在动。SAM 2 把大象跟住，光流看鼻子和身体是不是在动、往哪动。幅度太小，运动幅度那一格会说你交了一张静帧。插帧模型补不出中间时刻，运动平滑会说你的时间是跳的。两条样本合在一起，才是这个基准想要的一张成绩单：会不会执行相机，会不会执行动词，两件事分开记。三维生成模型甚至只被要求交静态这一半，视频世界模型才被要求两半都交。CogVideoX 属于后者。</p>
+<p>2000 加 1000 这个规模也不是为了把演示做成数据集。一条咖啡馆说明不了分布。室内和室外、写实和风格化、推近和拉远，模型会在不同格子里犯不同的错。有的模型只在环绕时把几何拧碎，有的只在拉远时开始发明房间里没有的家具。基准把这些格子铺开，均值才有资格叫总分。单条样本的意义是把每条轴的计算走通，让你看见旋转、位移、框、光流、插帧各自交出来的原始数。它代替不了那 3000 条上的均值，也不该被写成排行榜名次。</p>
+<p>DROID 被选中，还有一个更具体的原因。相关体是在特征上滑动做出来的，不是在 RGB 上做差。束调整把位姿和逆深度放在同一个优化里，帧间的约束是重投影，不是“光流看起来顺”。lietorch 把 SO(3)、SE(3) 这些群的指数映射和雅可比做成了可以反传的算子，所以这条 SLAM 不是一个外挂的黑盒后处理，它的几何更新是可导的。WorldScore 评测时并不反传进生成器，它只取最终轨迹。但度量本身是一个真的几何估计器，不是一个训来模仿几何分数的网络。这是它和“再训一个打分器”之间的差别：打分器可以记住某种画面风格，位姿误差不太会因为你把木纹换一种滤镜就改口。</p>
+<p>风格和主观质量被留在最后，也是同一条纪律。Gram 矩阵比的是 VGG 特征的二阶统计，它抓“这还是不是同一种材质”，不抓“椅子还在不在”。CLIP 的质量和美学分抓观感。把它们单列，是承认观感有用，同时拒绝让观感给几何打分。一个闪得好看的模型可以在这里拿分，然后在相机和重投影上把分数吐回去。读者不打开仓库也能把这张表读完：指令在左，估计器在右，观感不准越界。</p>
+<p>这也是它和常见视频分数的分歧。FVD、单一 CLIP、或者“人看了觉得真”都在奖励一段能看的片子。WorldScore 的总分是轴的平均，轴与轴之间不设补偿。相机 90、物体 25，不会被美学分抹成一个温和的 70 然后消失。排行榜上的名次如果有意义，意义就在这里：它告诉你这个生成器欠的是哪一种世界，而不是欠一段更顺的插值。生成器可以继续把单帧做漂亮，基准不拦这件事，它只是不再让这件事单独代表“懂世界”。</p>
+<h2>被拿来跑的那个生成器</h2>
+<p>适配器并不把一条相机路径变成一套外参矩阵再去渲染。静态样本的合同是一句文本。数据集给了起始图、场景描述和 <code>camera_path</code>，路径的名字落在推近、拉远、平移、环绕、横摇、固定这几格里。适配器把这些格子翻成一句相机指令，再补上“场景里的一切保持不动”。日志里那条咖啡馆就是这样：先写 Camera push in，再写暖光、吧台和餐椅，最后写 Everything in the scene remains completely motionless。模型要同时满足移动镜头和不让物体自己演戏。它做不到的时候，相机分和物体分会往相反的方向掉，这正是基准想看见的。</p>
+<p>动态样本把这句话反过来。相机多半固定，文本里的动词才是要执行的指令。大象那一条是关节运动、相机钉死。模型若用晃镜头假装鼻子抬起来，运动准确性看的是掩膜里的光流，不是画面的整体平移，晃镜头帮不上忙。</p>
+<p>CogVideoX 本身是一个扩散 transformer。文本走 T5。视频先过一个三维因果 VAE：空间上压缩，时间上也压缩，而且因果，后面的帧不能改写前面的潜变量。去噪发生在这个潜空间里，注意力是全的，所以一帧里的吧台和后一帧里的吧台有机会对上，但这只是机会，不是约束。2B 这一档用 DDIM，适配器默认 50 步，输出 720×480、49 帧、8 帧每秒。49 不是一个好看的整数，它是时间压缩率整除之后还剩得下的长度。适配器把 VAE 的切片和分块打开，一张 48GB 的卡放得下这一档。放不下的是“数据并行再铺开”的习惯，基准的一条样本本来就不需要。</p>
+<p>生成器写盘的方式也是评测的合同。每一条样本一个目录：<code>frames/</code> 里的逐帧图，<code>videos/</code> 里的成片，<code>image_data.json</code> 记录这条样本从哪来，<code>time.txt</code> 记生成花了多久。评测器不读你的日志，它走路过这些目录。缺了帧、缺了相机记录、缺了输入图，这条就算没交卷。所以“模型能吐出张量”不算跑完，目录长对了、评测器肯读，才算。</p>
+<p>这里有一个上游配置自己埋的坑。配置文件的名字是 <code>cogvideox_2b_t2v</code>，代码里只要名字带 <code>2b</code> 就选 2B 的调度器，可 <code>model_path</code> 写的是 <code>THUDM/CogVideoX-5b</code>。调度器是 2B 的，权重是 5B 的，两边对不上。把权重指回 <code>THUDM/CogVideoX-2b</code>，是为了让这次跑的模型就是名字上写的那个模型。静态那一条是写实室内用餐、推近。动态那一条是关节动物、大象、相机固定。两条都是各自清单里的第一条。</p>
+<h2>在 Radeon 上，CUDA 这个词经常只是个旧名字</h2>
+<p>机器上有八张卡。这次只用一张，容器里只挂了一个 render 节点，进程里再把 <code>HIP_VISIBLE_DEVICES</code> 和 <code>ROCR_VISIBLE_DEVICES</code> 都设成 0。报上来的设备是 AMD Radeon Pro W7900D，gfx1100。镜像是 ROCm 7.14 的 PyTorch 2.11。这个镜像的 ROCm 不在 <code>/opt/rocm</code>，它是一个 pip 轮子，头文件和 hipcc 躺在 <code>_rocm_sdk_core</code> 里。</p>
+<p>第一道墙很有教育意义。DROID 要编译 lietorch 和自己的相关体核。hipcc 还没读到我们的代码，就死在 PyTorch 的 <code>complex.h</code> 里：它要 <code>#include &lt;thrust/complex.h&gt;</code>。运行时轮子里没有 rocThrust。你自己的核一个 thrust 算法都没写，编译器照样找上门，因为 torch 的复数类型在 HIP 上是用 thrust 的复数实现的。devel 头文件在另一个轮子 <code>rocm-sdk-devel</code> 里，装上之后还得 <code>rocm-sdk init</code> 把压缩包展开，<code>thrust/complex.h</code> 才会出现。设备 bitcode 则还在运行时轮子的 <code>lib/llvm/amdgcn/bitcode</code>，hipcc 不会自己猜到这条路径。另外 <code>libamdhip64.so</code> 只以 <code>.so.7</code> 的形式存在，链接器要的是不带版本的那个名字，得自己补一个符号链接。这些都不是算法问题，是工具链把“能 import torch”和“能编译一个 CUDA 扩展”当成了两件不同的事。</p>
+<p>torch-scatter 是下一件不值得硬刚的事。DROID 只用 <code>scatter_sum</code> 和 <code>scatter_mean</code>。这两个就是带广播的 <code>scatter_add_</code>，ATen 里已经有 gfx1100 的实现。torch-scatter 的 HIP 扩展却要整份 rocThrust 的源码才能编过。于是 <code>shim/torch_scatter</code> 放在 <code>PYTHONPATH</code> 最前面，两个函数用 <code>scatter_add_</code> 实现，和 pyg 的广播规则对齐。束调整不需要第三种 scatter。</p>
+<p>lietorch 编过了头文件，死在一行 Eigen 上：<code>X.Matrix4x4().block&lt;3,3&gt;(0,0)</code>。nvcc 把这串尖括号当成模板参数。Clang 在这个依赖类型上把它读成小于号，然后逗号运算符把剩下的 <code>3&gt;(0,0)</code> 处理掉，报的错是“你引用了一个成员函数却没调用它”。改成 <code>.template block&lt;3,3&gt;(0,0)</code> 就恢复了作者原来的意思：取 4×4 矩阵左上角那个 3×3 的旋转块，乘到点的梯度上。这是 Lie 群作用的反向，不是一个新的几何。</p>
+<p>DROID 自己的 <code>setup.py</code> 在当前的 setuptools 上也过不去。它调用了两次 <code>setup()</code>，一次给 <code>droid_backends</code>，一次给 lietorch，新的构建后端发现目录里冒出两个 egg-info 就停了。nvcc 的 <code>-gencode arch=compute_60</code> 这一串 hipcc 也不认识，架构应该由 <code>PYTORCH_ROCM_ARCH=gfx1100</code> 决定。lietorch 改从它自己的目录装，DROID 的脚本只留 <code>droid_backends</code>。另外三处 <code>tensor.type()</code> 得换成 <code>scalar_type()</code>。PyTorch 2.11 里 <code>AT_DISPATCH</code> 要的是枚举，<code>type()</code> 返回的是一个已经标了废弃的属性对象，转换不过去。</p>
+<p>GroundingDINO 的可变形注意力有一条 CUDA 扩展 <code>_C</code>，也有一条用 <code>grid_sample</code> 写的 PyTorch 实现。选择条件是 <code>torch.cuda.is_available() and value.is_cuda</code>。在 ROCm 上这两条都为真，于是代码走进一个没编译出来的 <code>_C</code>，而不是走进那条其实能在 GPU 上跑的参考实现。判断改成“扩展真的导入了才用它”。物体检测因此走的是 PyTorch 的多尺度可变形注意力，算法还是原文的那一个，只是没有自定义核。</p>
+<p>BERT 那一层是 transformers 5 拆掉的。GroundingDINO 的包装器在初始化时把 <code>get_extended_attention_mask</code> 从 <code>BertModel</code> 上借过来。这个方法在新版本里不在了。编码器本身还在把一个加性 mask 加到注意力分数上：该看的位置是 0，不该看的位置是该 dtype 的最小负数。包装器里把这个函数补回去，包括三维的那种。三维 mask 是 GroundingDINO 的关键，不是填充。它用特殊 token 把一句话切成短语，短语之间不让互相看。少了这个，检测器还在跑，但文本不再按短语起作用。</p>
+<p>VFIMamba 的选择性扫描原本来自 <code>mamba_ssm</code> 的 CUDA 核。那个核还要 causal conv 的一套，不值得为了一个插帧度量去编。仓库里换成 mamba 论文实现里的那份 PyTorch 参考递推：对序列长度做扫描，分组的 B 和 C 先在头的维度上重复，再和离散化之后的 A 一起更新状态。慢，但是同一个递推。运动平滑这一项就是用它跑完的。</p>
+<h2>分数说明了什么</h2>
+<p>静态总分 51.1，动态总分 43.9。相机控制 89.48，对应的旋转误差大约 0.52、平移误差大约 0.085，推近这条路径 DROID 认为大体是照做了。三维一致性 82.54，光度 61.42，风格 61.3，主观质量 37.96。物体控制 25，检测器没有把指令里的物体都保住。内容对齐是 0，因为这条静态样本是场景内的推近，评测代码把内容对齐跳过了；烟雾集里又没有第二条静态样本，这一轴没有别的数可平均。动态这边运动幅度 24.41，运动平滑 56.93。运动准确性的原始分是负的，归一化被夹到 0：SAM 2 和光流都跑过了每一帧，分低是生成结果没按指令动，不是度量没启动。</p>
+<p>这组数不能拿去和完整排行榜比。它只说明上游的生成和评测在一张 W7900 上走完了，而且走完的是带位姿、检测、光流、插帧的那条，不是 import 一下就算移植成功。</p>
+<p>代码在 <a href="https://github.com/charyang-ai/worldscore">https://github.com/charyang-ai/worldscore</a></p>
+  </div>
+</article>
+<footer class="site-footer">
+  <span>Charles Yang</span>
+  <a href="https://github.com/charyang-ai/RoboGarden">GitHub</a>
+</footer>
+
+
+</body>
+</html>

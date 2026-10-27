@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>没有物理引擎的世界，还是要一把尺子 · RoboGarden</title>
+  <meta name="description" content="给一帧画面和一串动作，在像素里把下一秒演完，中间不请物理引擎当裁判。">
+  <meta name="author" content="Charles Yang">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="wordmark" href="../index.html">Robo<span>Garden</span></a>
+  <a class="who" href="../index.html">Charles Yang</a>
+</header>
+
+<article class="post">
+  <a class="back" href="../index.html">← 全部笔记</a>
+  <p class="kicker">Interactive World Simulator · 2026.10.27</p>
+  <h1>没有物理引擎的世界，还是要一把尺子</h1>
+  <p class="byline"><strong>Charles Yang</strong></p>
+  <div class="figures">
+    <figure>
+  <img src="../media/interactive-world-sim/iws-correlation.png" alt="同一批策略，在世界模型里的分数和在真机上的分数。点靠近对角线，说明排序对得上。图来自项目页。">
+  <figcaption>同一批策略，在世界模型里的分数和在真机上的分数。点靠近对角线，说明排序对得上。图来自项目页。</figcaption>
+</figure>
+  </div>
+  <div class="videos">
+    <figure>
+  <video controls playsinline preload="metadata" poster="../media/interactive-world-sim/frame-iws-pusht.jpg">
+    <source src="../media/interactive-world-sim/iws-pusht.mp4" type="video/mp4">
+  </video>
+  <figcaption>推一个 T 形块。左边是模型开环画出来的画面，右边是人在遥操作。</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../media/interactive-world-sim/frame-iws-rope.jpg">
+    <source src="../media/interactive-world-sim/iws-rope.mp4" type="video/mp4">
+  </video>
+  <figcaption>把绳子送向夹子。进了夹子，和从旁边荡过去，是两段不同的视频。</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../media/interactive-world-sim/frame-iws-mug.jpg">
+    <source src="../media/interactive-world-sim/iws-mug.mp4" type="video/mp4">
+  </video>
+  <figcaption>抓一只杯子。滑出指缝，和杯把被顶着转，都是很小的像素变化。</figcaption>
+</figure>
+  </div>
+  <div class="prose">
+    <p>给机器人一帧画面和接下来想做的动作，让它说出画面会变成什么样。这件事听起来像视频模型早就会的本领，直到你真的拿动作去戳它。大多数会画画的模型接受的是一句提示词，不是「左手往前两厘米、右手别动」。戳一下，布该不该动、杯子会不会从指缝里滑出去、绳子是穿进夹子还是从旁边荡过去，这些差别在提示词里往往被抹成同一种「看起来像那么回事」。Interactive World Simulator 押的就是这个差别：世界模型要吃动作，并且在你一直戳下去的时候不要散掉。</p>
+<p>这项工作来自 Columbia、丰田研究院、Amazon 和 UIUC，作者是 Yixuan Wang、Rhythm Syed、Fangyu Wu、Mengchao Zhang、Aykut Onol、Jose Barreiros、Hooshang Nayyeri、Tony Dear、Huan Zhang 和 Yunzhu Li，发表在 RSS 2026。四个任务把赌注摊开了：推一个 T 形块，抓一只杯子，把一堆东西扫进簸箕，把绳子穿进夹子。刚体接触、细碎的滑移和转动、一堆物体、还有一根会弯的绳子。没有哪一个能靠「我见过很多机器人视频」蒙混过去。</p>
+<h2>为什么不直接上物理引擎</h2>
+<p>物理引擎当然能算接触。代价是每个新场景都要有人把几何、质量和摩擦交上去，绳子和一堆小物体还特别不老实。另一头是开放的视频生成：同一帧起始画面、一句任务描述，闭源模型可以吐出一段看起来很忙的录像，但那段录像不接受你的动作序列，生成完就结束了。策略训练和策略评估要的都不是一段宣传片。训练要能用遥操作设备在模型里采集演示；评估要同一条策略在模型里的成败，和在真机上的成败对得上。</p>
+<p>所以他们要的模拟器是这样的：给定初始帧和一串动作，在像素里往下演，中间不请物理引擎来当裁判。项目页上的说法很具体。开环交互可以在一张 RTX 4090 上以 15 帧每秒持续十多分钟。用模型生成的演示去训练模仿策略，把生成数据和真机数据的比例从 0% 扫到 100%，DP、ACT、π0 和 π0.5 在推 T、扫地、抓杯子、穿绳子这些任务上的表现大体保持在同一水平。同一批策略放进模型里打分，再放到真机上打分，好坏的排序对得上：模型里失败的，真机上也失败；模型里做成的，真机上也做成。赌注不是「画得像」，而是「这台模拟器能不能代替一次真机数据采集，以及一次真机评估」。</p>
+<h2>模型很小的那一部分，和很大的那一部分</h2>
+<p>网络叫 <code>LatentWorldModel</code>，站在 Diffusion Forcing 上。画面不直接交给一个巨大的视频网络从第一帧自回归到最后一帧。它先被一个编码器收成潜变量，动力学在潜变量里跟着动作往前走，再由一个扩散解码器画回像素。</p>
+<p>编码器小得几乎不好意思。对单目输入，它是几层步长为 2 的卷积，把分辨率降两次，通道收成 4。这次在 W7900 上打印出来的参数量是 704。旁边的扩散解码器 <code>CMDecoder</code> 是 2760 万，潜变量动力学是 580 万，整个可训练模型 3340 万，大约 134 MB。压缩这一步几乎不学习「世界是什么」，它只是把 RGB 收成一张更小的特征图，把表达能力留给后面那个会去噪的 U-Net。这是一个很强硬的分工：眼睛可以很便宜，因为画质和物理都要在解码和动力学里重新挣回来。</p>
+<p>训练拆成三段，顺序本身就是方法。第一段只训编码器和扩散解码器，重建必须先几乎完美，否则后面的动力学是在猜一张靠不住的地图。第二段把编码器冻上，训因果的潜变量动力学：过去的潜变量加上动作，预测下一步的潜变量。第三段再把解码器拿回来微调，让它经得起动力学吐出来的那种带噪声的潜变量，而不是只见过编码器自己的干净输出。配置里写着，第二段和第三段的次序可以调换；第二段最费时间。新任务主要改 <code>action_mode</code> 和 <code>action_dim</code>。PushT 的动作是 4 维，默认配置里的动作维是 10，对应更完整的双臂。</p>
+<p>动力学 <code>CMLatentDynamics</code> 是因果的。时间轴不能看见未来帧，这是交互模拟器的本分：你还没做的动作，不该已经出现在画面里。时间嵌入用旋转位置编码，注意力可以走线性注意力，卷积核在时间上是 1，空间上是 3，所以它更像「每一帧做空间混合，再用注意力把时间串起来」。扩散调度沿用 Diffusion Forcing 那一套：训练 1000 步、sigmoid 的 beta、预测速度 <code>pred_v</code>、融合的信噪比加权，采样时再收成 50 步的 DDIM。数据类型是 float32。这句话看起来像实现细节，后面会变成移植时唯一真正挡住前向的那一行。</p>
+<p>损失也按阶段分开。第一阶段的 <code>training/rec_loss</code> 是解码器在带噪图像上的加权均方误差，潜变量只作为条件。第二阶段才有 <code>training/loss</code>，误差算在潜变量上，动作是外部条件。评估指标里包括 FVD，用一个 I3D 网络来量生成视频和真实视频的距离。玩数据的建议写在上游说明里：动作要覆盖不同速度、接触方式和位置，遮挡要少；大约 6 小时、600 条、每条 200 步，通常够训一个世界模型。</p>
+<h2>每一帧可以有自己的噪声</h2>
+<p>Diffusion Forcing 的点子用在这里很贴切：一段视频不必整段共享同一个扩散时间。配置里的调度矩阵是自回归的，过去帧可以更干净，当前要预测的那一帧更吵。交互的时候这就是你想要的形状。已经发生的画面应当稳住，还没发生的那一帧才是需要从噪声里捞出来的。过去帧上留一点噪声（<code>prev_frame_noise_scale</code> 是 0.1），是为了让模型在训练时见过「历史并不完美」，开环滚很多步的时候才不至于一碰到自己的误差就崩。</p>
+<p>采样也顺着这个结构来。动力学的推理步数默认是 1，解码器是 3，完整的 DDIM 采样步数是 50。交互模拟器若是每一步都把 1000 步的扩散走完，15 帧每秒无从谈起。所以训练时用完整的噪声日程把速度场学好，交互时用很少的去噪步把下一帧交出来。因果注意力保证这一帧看不见未来的动作结果；动作作为外部条件送进动力学，而不是写进提示词里碰运气。</p>
+<p>四个任务考的是同一种条件会不会被当真。推 T 的时候，夹爪的平面位移得变成块的刚体转动，推空了就什么都不该发生。抓杯子要分得清杯子滑出指缝，和杯把被顶着转，这两种都是很小的像素变化。扫地是一堆物体各自响应，扫进簸箕和扫到簸箕外面不是同一段视频。穿绳子更苛刻：绳子进了夹子，和绳子从夹子旁边荡过去，模型不能因为「任务说明是穿绳子」就总画成穿进去。项目页把这句说得很直，模型不偏向任何一种接触，接触与否由动作和当前画面决定。</p>
+<p>把第一阶段的一步拆开，能看见这个分工怎么落到张量上。一批观测先按数据集自己的均值和方差归一化，再把时间维折进 batch，送进那 704 个参数的编码器，得到条件潜变量。扩散调度器给每个样本抽一对噪声级，把干净图像加噪两次，解码器在潜变量的条件下预测更干净的那一档。均方误差按调度器给的权重缩放，再对所有像素取平均，这就是 <code>training/rec_loss</code>。第二阶段把同一件事搬到潜变量序列上：编码器不再接收梯度，动作序列换成时间在前的布局，送进因果动力学，误差改到潜变量上算。第三阶段回到像素，但条件潜变量上加了一点高斯噪声，逼解码器适应动力学以后会交出来的那种不干净的 z。三段加起来，才是「先学会看，再学会动，最后学会看一个会动的潜变量」。</p>
+<h2>假的演示，真的排序</h2>
+<p>采集真机演示贵，所以他们问了一件更尖的事：模型里遥操作出来的轨迹，能不能顶替真机轨迹去训模仿策略。实验把总演示数固定在 100 条，生成数据和真机数据的比例从全真扫到全假，策略包括 DP、ACT、π0 和 π0.5，任务覆盖仿真和真机上的推 T、扫地、抓杯子、穿绳子。他们的结论是，这条混合比例上的表现大体持平。也就是说，至少在这些任务和这些策略上，世界模型数据的质量和真机数据处在同一档，而不是「能看，但不能学」。</p>
+<p>评估问的是另一件事。同一套初始条件，同一批策略检查点，一边在世界模型里打分，一边在真机上打分。好策略在两边都做成，差策略在两边都失败，行为也像。这比「生成一段好看的失败」难得多。好看的失败谁都会：夹爪挥一下，画面动一动。忠实的失败要求模型在策略犯错的那个接触上错得和真机一样，而不是好心把绳子画进夹子里。十多分钟、15 帧每秒的开环交互，是在说误差不会在几十秒里积累成另一台机器人。</p>
+<p>项目页还把同一帧起始画面交给一批不接受动作的闭源视频模型，只给它们一句任务描述，比如把绳子穿进两个夹子。那些模型能产出一段忙碌的画面，但生成一旦开始，手就退出了。Interactive World Simulator 的键盘就是动作序列本身：WASD 和 IJKL 推动双臂在平面上走，抓取任务再加上高度和开合。画面跟着这次按键变，跟着提示词变的是另一类模型。长程稳定性因此不只是视频够长，而是同一次交互可以持续十多分钟还不换一个世界。对策略评估来说，这个差别是定性的。你不能在一段已经生成完的录像里换一条策略再看一遍；你得让策略的动作重新进入模型，模型再把下一帧交出来。</p>
+<h2>数据里藏着的那点运动学</h2>
+<p>模型声称世界不需要物理引擎。数据集却不直接相信 hdf5 里存好的 <code>action</code>。PushT 这种双臂推动，缓存回放缓冲的时候会用关节角重新算末端位姿，再当成动作。正运动学只服务机器人自己：六个体关节，从腰、肩、肘、前臂滚转、腕摆到腕转，乘到 <code>vx300s/ee_arm_link</code>。夹爪的移动副在这根连杆之后，不改变末端位姿。8 维的关节向量里，前 6 维就够了。</p>
+<p>这是一个干净的边界。绳子会不会进夹子，由数据里的像素来教，不由引擎来判。机器人的手指下一帧出现在哪，则是已知的机构，不需要让网络再学一遍 URDF。交互世界模型省掉的是场景的物理，不是机体的几何。缓存建好之后，训练看到的动作已经是末端在平面上的位移。单臂抓取还会把夹爪开合从关节角里单独拣出来，因为那一维确实在改变末端执行器的宽度。PushT 用不到这一维，左右手各留平面上的两个位移，合成 4 维动作。动力学的 <code>action_dim</code> 必须和这个约定一致，否则条件向量对不齐，模型会把「往左推」听成别的关节。</p>
+<h2>一张 W7900 怎样被认成 A100</h2>
+<p>这次移植用一张 AMD Radeon Pro W7900D，gfx1100，48 GB，镜像是 ROCm 7.14 和 PyTorch 2.11。容器只挂一个渲染节点，进程里只有这一张卡。模型 134 MB，batch 1，没有理由加卡。</p>
+<p><code>device: cuda</code> 不用改。ROCm 的 PyTorch 把 HIP 设备露成 <code>torch.cuda</code>，Lightning 也高兴地报告 <code>GPU available: True (cuda)</code>。会骗人的是另一套编号。上游的注意力模块用 <code>torch.cuda.get_device_properties</code> 看主次版本号：主版本大于等于 8、次版本等于 0，就当成 A100，只打开 Flash Attention。W7900 报的是 11.0。11 大于 8，0 等于 0，于是一张 Radeon 被热情地欢迎成了 A100。</p>
+<p>欢迎完就出错。这个模型的潜变量是 float32，而这一版 ROCm 上的 Flash SDPA 只肯做 fp16 和 bf16，探测时直接说没有可用的核。<code>EFFICIENT_ATTENTION</code> 和 <code>MATH</code> 在同样的 float32 上能算完。所以 HIP 分支在那条 A100 判断之前返回，后端改成数学实现和内存高效实现。这不是把 Flash 关掉来「凑合」，而是那条启发式认错了卡，它选出的后端又做不了模型真正使用的数据类型。打印出来的那句是「ROCm GPU detected, using math or mem efficient attention」。</p>
+<p>旁边还有两个不会出现在论文里的依赖。FVD 的 I3D 权重放在 Dropbox 上，原来在指标对象一构造时就下载。这台机器访问 Dropbox 会超时，而一次只训几十步的 stage 1 根本不会调用 <code>compute()</code>。下载改到第一次真的要算 FVD 的时候。另外，<code>wandb.mode=disabled</code> 仍然要求一个 <code>wandb.entity</code>，否则程序在看模式之前就退出。给一个本地名字即可。</p>
+<p>运动学是更大的一块绕路。SAPIEN 2.2 没有 Python 3.12 的轮子，镜像却是 3.12。Pinocchio 的轮子装上以后找不到自己的共享库。另一套纯 PyTorch 的运动学又要求 numpy 1，而这份 ROCm torch 带着 numpy 2，降回去 torch 会先坏。训练只要末端位姿，于是用标准库把 URDF 的六个旋转关节乘到末端连杆。逆运动学没做，键盘遥操作因此没有拿来当验证。其余的依赖摩擦都是同一类：CUDA 轮子不能装，h5py 得换有 3.12 轮子的版本，imgaug 的隔离构建缺 <code>pkg_resources</code>，<code>torchmetrics</code> 要 venv 自己的 setuptools 才找得到 <code>distutils</code>。DataLoader 写死了 <code>prefetch_factor=1</code>，PyTorch 2.11 在零 worker 时会拒绝它，所以取数用了两个进程，计算仍是一张卡。</p>
+<h2>三十步说明了什么</h2>
+<p>验证是上游的 <code>main.py</code>，PushT 的 mini 集，5 条训练、5 条验证，只看 <code>camera_1_color</code>，horizon 1，batch 1，stage 1，最多 30 步。30 步全部走完，进度条 23 秒，大约 1.28 步每秒，Lightning 因为 <code>max_steps=30</code> 停下来。第一步 MIOpen 抱怨读不到 gfx1100 的调优库，运行时也提示这颗处理器不支持 xnack。两句警告都没能阻止第 30 步。</p>
+<p>损失没有写进这次禁用了日志的 30 步里。另一次 8 步、用离线记录器留下的 <code>training/rec_loss</code> 是 0.0628、0.0333、0.1616、0.1668、0.0458、0.0266、0.1653、0.0299，均值 0.0865。随机初始化和 batch 1 本来就会这么跳。这些数字说明重建损失在这张卡上是有限的、反向能走完，不说明 T 形块已经被这个模型学会了。上游自己的 stage 1 要训到重建几乎完美，那是一百万步的量级，不在这次验证里。</p>
+<p>单卡是默认，不是退而求其次。134 MB 的模型塞进 48 GB 以后还剩下一整张卡的空闲，多卡数据并行并不会让这 30 步更可信。</p>
+<p>代码和这次的日志在 <a href="https://github.com/charyang-ai/interactive_world_sim">https://github.com/charyang-ai/interactive_world_sim</a> 。</p>
+  </div>
+</article>
+<footer class="site-footer">
+  <span>Charles Yang</span>
+  <a href="https://github.com/charyang-ai/RoboGarden">GitHub</a>
+</footer>
+
+
+</body>
+</html>
