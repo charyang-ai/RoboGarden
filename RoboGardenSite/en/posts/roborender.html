@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Geometry Has the Veto: How RoboRender Turns Simulated Trajectories into Videos a Policy Can Learn From · RoboGarden</title>
+  <meta name="description" content="Simulation keeps the geometry and actions; a video model paints the trajectory in real-world colors.">
+  <meta name="author" content="Charles Yang">
+  <link rel="alternate" hreflang="zh-CN" href="https://worldloop.github.io/posts/roborender.html">
+  <link rel="alternate" hreflang="en" href="https://worldloop.github.io/en/posts/roborender.html">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="wordmark" href="../../en/index.html">Robo<span>Garden</span></a>
+  <nav class="site-nav">
+    <a class="lang-switch" href="../../posts/roborender.html" hreflang="zh-CN" lang="zh-CN" title="中文">中文</a>
+    <a class="who" href="../../en/index.html">Charles Yang</a>
+  </nav>
+</header>
+
+<article class="post">
+  <a class="back" href="../index.html">← All notes</a>
+  <p class="kicker">RoboRender · 2026.10.27</p>
+  <h1>Geometry Has the Veto: How RoboRender Turns Simulated Trajectories into Videos a Policy Can Learn From</h1>
+  <p class="byline"><strong>Charles Yang</strong></p>
+  <div class="figures">
+    <figure>
+  <img src="../../media/roborender/rr-comparison.png" alt="Frame 40. Left to right: depth, arm mask, painted frame; the three rows are three views. The prompt asks for a red cup, the geometry gives an ellipse, and the ellipse becomes a spoon.">
+  <figcaption>Frame 40. Left to right: depth, arm mask, painted frame; the three rows are three views. The prompt asks for a red cup, the geometry gives an ellipse, and the ellipse becomes a spoon.</figcaption>
+</figure>
+  </div>
+  <div class="videos">
+    <figure>
+  <video controls playsinline preload="metadata" poster="../../media/roborender/rr-comparison.png">
+    <source src="../../media/roborender/rr-comparison.mp4" type="video/mp4">
+  </video>
+  <figcaption>Comparison video from the same 50-step run. One row per view; columns are depth, mask, and generated output.</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../../media/roborender/rr-head.jpg">
+    <source src="../../media/roborender/rr-head.mp4" type="video/mp4">
+  </video>
+  <figcaption>81 frames painted for the head camera.</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../../media/roborender/rr-left.jpg">
+    <source src="../../media/roborender/rr-left.mp4" type="video/mp4">
+  </video>
+  <figcaption>Left wrist camera.</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../../media/roborender/rr-right.jpg">
+    <source src="../../media/roborender/rr-right.mp4" type="video/mp4">
+  </video>
+  <figcaption>Right wrist camera.</figcaption>
+</figure>
+  </div>
+  <div class="prose">
+    <p>The cup in the simulator has the right edges, the handle sits in the right place, and the labels for where the arm goes over the next 81 frames are correct. Put the policy on a real table and it misses. The cause is often not a wrong friction coefficient. It is the grain of the wood, the glint on a metal handle, the extra potted plant in the background, none of which exist in the simulator&#x27;s renderer. People recognize objects by these cues, and so do networks. RoboRender swaps the problem &quot;make the simulator look more like the world&quot; for a different one: the simulator keeps doing geometry, dynamics, and actions, and a video model paints that trajectory into the RGB you would see in the real world.</p>
+<p>The work comes from Stanford, Nvidia, and Microsoft Research. The authors are Huang Huang, Wensi Ai, Ziyu Chen, Youhui Wang, Zijian Du, Yang Liu, Jiaolong Yang, Fei-Fei Li, and Jiajun Wu. The paper is <a href="https://arxiv.org/abs/2610.09254">arXiv:2610.09254</a> and the project page is <a href="https://robo-render.github.io/">robo-render.github.io</a>. The real-robot numbers are hard: eight tasks, three embodiments, 10 trials each, 71% average success. Training on the same simulated trajectories with raw simulator RGB gives 10%; adding texture and lighting domain randomization gives 20%. On opening tasks (drawer, fridge), the first two kinds of data score 0, while RoboRender scores 70% and 90%.</p>
+<h2>The visual gap: three old roads, each with a hole</h2>
+<p>Simulation is cheap, parallel, resets itself, and hands you privileged state. Visual manipulation gets stuck somewhere else: at deployment the policy sees RGB from a real camera, and if training saw a different kind of image, recognizing objects has to be learned all over again.</p>
+<p>There are roughly three families of fixes. Digital twins rebuild the real scene with neural rendering or Gaussian splatting; every new room needs capture, calibration, and asset preparation, and geometry tends to drift during interaction. Switching to depth, point clouds, or object poses sidesteps the visual gap, but sidesteps semantics too, and at deployment you need yet another perception module to answer &quot;which handle is this?&quot;. Domain randomization randomizes textures, lighting, and cameras. The distribution gets wider, but the images often stop making sense, and fine structure (a drawer handle made of the same wood as the cabinet) is something random textures cannot supply.</p>
+<p>RoboRender leaves simulation where it is strong. Trajectories are still planned in MolmoSpaces and CuRobo: grasp libraries, collision checks, inverse kinematics. Pick-and-place is pre-grasp, grasp, lift, place, retreat; articulated objects follow an arc; mobile manipulation navigates first and then grasps. Only successfully planned segments survive. These trajectories come with depth, arm masks, proprioception, and actions. The video model is not asked to invent physics. It is asked to paint appearance on top of these conditions.</p>
+<p>The painted RGB is paired with the simulator&#x27;s state and actions and used to fine-tune π0.5. The policy predicts 32 action steps and executes the first 16, trained for 40k steps at batch size 72. Deployment is zero-shot, with no real-robot fine-tuning. The real setting is an office, with object sizes, camera angles, and backgrounds different from simulation. DROID-style pick-and-place uses a Franka with a Robotiq gripper, mobile manipulation uses an R1Pro never seen in training, and a YAM arm grabs a green marker. The video model&#x27;s training set contains only DROID and AgiBot; the other two embodiments are reached by generalizing through the mask condition.</p>
+<h2>The model&#x27;s bet: pin every view to the same latent</h2>
+<p>The base is the control variant of Wan2.1-T2V-1.3B; the released weights are PAI&#x27;s Wan2.1-Fun-V1.1-1.3B-Control. That is already a video diffusion Transformer with a control channel, and RoboRender adapts it to robots with LoRA: global batch size 16, about 12k steps, roughly 130k real manipulation clips, resolution 416×240.</p>
+<p>There are four conditions, each responsible for one thing.</p>
+<p>Depth video controls geometry and how objects move. Each view gets depth from Video-Depth-Anything, mixed with FoundationStereo when a stereo camera is available, all normalized as inverse depth. During training the depth source is randomized per view, so the model does not memorize the quirks of one estimator.</p>
+<p>The arm RGB mask controls the embodiment and how the arm moves. SAM3 segments the arm and gripper from the frame. The background can change while the arm&#x27;s motion stays. When the mask comes from simulation, the simulator&#x27;s own rendering of the arm is used directly, since the sim-to-real gap in arm appearance is small. R1Pro and YAM never appeared in training, yet the model still paints them by following the mask.</p>
+<p>Language controls appearance: materials, lighting, background, what is on the table. Training captions were written by Qwen2-VL from the first frame of each view, drafted first and then cross-checked against the non-wrist views, with output constrained to a structured description, which hallucinates less than looking at a single image. When generating simulated data, the scene description is replaced with task sentences written by Claude.</p>
+<p>The previous frame controls time. Wan&#x27;s window is a fixed 81 frames, while demonstrations are often longer. During training the previous frame is dropped with some probability, so the first segment can run without an anchor and later segments can continue from the last frame of the previous one. Inference rolls forward autoregressively this way. On 15-second rollouts, the paper measures PSNR and LPIPS every 3 seconds, and this model leads the depth-only baseline at every point in time.</p>
+<p>Structurally, depth and mask each pass through Wan&#x27;s video VAE, are concatenated along channels, and the views are stacked along height into one block. Three views at 240 pixels each make a total height of 720, which is divisible by 16, a requirement set jointly by the VAE and the patch size. The noise latent, depth latent, and mask latent are concatenated along channels and fed to the DiT. In the released code the DiT has hidden size 1536, 30 layers, 12 heads, feed-forward 8960, patch 1×2×2, and 48 input channels: a 16-dim video latent plus two 16-dim control latents. Text goes through umT5-XXL, the previous frame through a separate CLIP vision tower, and one more convolution prepends the reference latent to the token sequence.</p>
+<p>Sampling is flow matching with shift 5.0, 50 steps by default, CFG 5.0. Positive and negative prompts are each run once and combined with a 5× difference. The three views therefore share one denoising pass: the table, cup, and arm in the external and wrist cameras are different height bands of the same latent, not three independent generations that you hope will happen to agree.</p>
+<p>That is where multi-view consistency comes from. Wan-Fun-Control and Cosmos-Transfer2.5 paint each view separately, and the table changes. On 500 held-out real clips, RoboRender gets FID 25.7 and FVD 93.9 on the first segment, and PSNR 22.28, SSIM 0.784, LPIPS 0.142 on autoregressive continuation. The best depth-conditioned baseline is above FID 42. In two-alternative choices by 50 people, RoboRender is preferred over all three baselines by more than 70% on realism and multi-view consistency, and by 94.6% over RoboTransfer on generation quality.</p>
+<p>There is also a hole dug deliberately during training. Large patches of the depth map are randomly masked, and the model has to fill appearance in from the prompt where there is no geometry, rather than reciting the input depth. At inference, the same region is cut out in every view and the prompt names new clutter; the clutter then appears at the matching location in every view, without changing the geometry the task depends on. The recipe for DROID pick-and-place is 2 to 5 patches covering 20% to 50% on external views, and 1 to 2 patches on the wrist view. When random distractors are placed on the table in real tests, simulation and domain randomization drop sharply while RoboRender barely moves, because its training data already contains clutter it painted in itself.</p>
+<p>Speed is the bill for this design. One three-view, 81-frame block takes 68.8 seconds on a single H200 in the paper. TeaCache decides whether a step needs recomputation based on how much the modulated input changed, bringing the same clip to 35.3 seconds; its coefficients were calibrated on Wan2.1-T2V-1.3B and used as a proxy for the control version. DMD2 distills 50-step bidirectional sampling into 6 steps, 4.29 seconds on an H200. The distilled weights were not released with this inference repository, and the repo&#x27;s issues still have an open &quot;will it be open-sourced?&quot; question. What runs today is the 50-step teacher.</p>
+<p>On the data side, the training set has about 127k clips: roughly 70k from AgiBot-World-Alpha and 57k from DROID, across 16 task types. These datasets were made for policies, with no prompts, no aligned depth, and no arm masks. Preprocessing cuts every clip into aligned 81-frame segments and adds the four conditions. Simulated data is a separate pipeline and is not mixed with the real data used to train the video model: pick-and-place and mobile manipulation in OmniGibson, drawers, fridges, and YAM in MuJoCo, with one to two thousand successful trajectories per task. Painting the same trajectory several times with only the prompt changed raises opening-task success by another 65 points. The geometry does not change; the diversity of appearance does. The depth maps themselves could also train a policy, with depth estimated back from RGB by Video-Depth-Anything at deployment. In the paper that baseline gets 30%, 25%, and 10% on YAM, DROID pick-and-place, and R1Pro, versus 70%, 68%, and 70% with RoboRender RGB. Depth avoids the texture gap but also removes &quot;which object on the table does this sentence refer to&quot;. The semantics in RGB still matter. Opening tasks depend on this most: the handle and the cabinet are often the same material, and contours alone do not line up.</p>
+<h2>What actually happened on one W7900</h2>
+<p>The released inference entry is <code>infer.py</code>: it reads the depth video and arm mask for each view plus one prompt, splits them into 81-frame segments, runs the pipeline above, and writes an mp4 per view plus a comparison video with depth, mask, and generated output side by side. The README example is <code>data/test_long_sample_00502</code>. That directory is not in the repo; <code>.gitignore</code> excludes <code>data/</code>, and it is not in the public file list either. So verification used a synthetic 81-frame condition in the expected directory layout: three views, a moving bar plus an ellipse, and the sentence &quot;a robot arm on a wooden table reaches for a red cup&quot;. This only shows the main path runs end to end. It cannot be compared with the paper&#x27;s FID or 71%.</p>
+<p>The port itself has no CUDA source to rewrite. <code>flash_attn</code> and <code>sageattention</code> are optional imports and are not in requirements. Without them the original code falls back to <code>scaled_dot_product_attention</code>. Three views of 81 frames become about 25k tokens in the DiT (21 in time, 45 in height, 26 in width). SDPA&#x27;s math kernel materializes the score matrix, and 48 GB is not enough. PyTorch 2.11 on ROCm can use AOTriton&#x27;s flash attention, then the memory-efficient kernel. <code>core/dit.py</code> restricts the backend to those two and no longer allows the math kernel as a fallback. The CLIP branch already used SDPA in compatibility mode and is covered by the same function.</p>
+<p>Loading safetensors directly onto the <code>cuda</code> device sometimes calls <code>cudaMalloc</code> on ROCm. The loader got a fallback: on failure, load to CPU and then move to HIP. This time the 3.1 GB DiT and the 667 MB LoRA loaded straight onto the device and the fallback never fired, but it stays. The umT5-XXL encoder is 11.3 GB of bf16 weights, the CLIP vision tower file is 4.7 GB, and the VAE is 0.5 GB. During denoising, <code>rocm-smi</code> reads 18.4 GiB in use on the card. Upstream says about 20 GB for three views, which matches, so no second card was added.</p>
+<p>The container mounts a single render node. The image is <code>rocm/pytorch:rocm7.14</code>, PyTorch <code>2.11.0+rocm7.14.0</code>, HIP 7.14. In the process, <code>torch.cuda.device_count()</code> is 1 and the device name is AMD Radeon Pro W7900D. When layering another venv on top of the image&#x27;s <code>/opt/venv</code>, <code>--system-site-packages</code> does not reach the parent environment&#x27;s torch; that site-packages directory has to be written into a <code>.pth</code> file, otherwise dependencies install fine and <code>import torch</code> still fails. MIOpen complains that the system gfx1100 database file is unreadable; the first VAE tile takes 8.9 seconds and later tiles 1.2 seconds, and the warning does not block computation.</p>
+<p>With 50 steps, CFG 5.0, and seed 42, this segment took 399.7 seconds from encoding to decoding. The paper&#x27;s clip of the same size takes 68.8 seconds on an H200, about 5.8× faster. The LoRA merged 300 tensors. The output is three 416×240 videos, 81 frames at 15 fps, plus a 1248×720 comparison video: one row per view, columns for depth, mask, and generated output.</p>
+<p>Frame 40 is worth a look. The conditions are a gray bar and a white ellipse, and the prompt asks for a red cup. The image shows a wood-grain table and a black parallel gripper, and the ellipse has become a pale spoon. Geometry nailed the contour down, and language could not talk the spoon into a cup. That is exactly how this set of conditions divides the work: depth and mask have the veto, and language only picks appearance where geometry has not decided. If you really want a red cup, you first have to place a cup-shaped object in simulation. The synthetic sample also marks the boundary of this verification: the pipeline works, and the paper&#x27;s policy success rates are outside the scope of this run.</p>
+<p>The code is at <a href="https://github.com/charyang-ai/roborender-video-model">https://github.com/charyang-ai/roborender-video-model</a>.</p>
+  </div>
+</article>
+<footer class="site-footer">
+  <span>Charles Yang</span>
+  <a href="https://github.com/worldloop/worldloop.github.io">GitHub</a>
+</footer>
+
+
+</body>
+</html>

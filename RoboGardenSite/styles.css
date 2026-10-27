@@ -54,6 +54,21 @@ img, video { max-width: 100%; display: block; }
   color: var(--muted);
   text-decoration: none;
 }
+.site-nav { display: flex; align-items: baseline; gap: 18px; }
+.lang-switch {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--green);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 11px;
+  background: var(--paper-2);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.lang-switch:hover { border-color: var(--green-2); background: #fff; }
+.lang-switch:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 
 .hero { padding: 28px 0 8px; }
 .hero h1 {

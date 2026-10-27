@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Actions Are Points Too: PointWorld Predicts the Next Second on a W7900 · RoboGarden</title>
+  <meta name="description" content="State and action speak the same language. From one RGB-D image, predict where every point goes in the next second.">
+  <meta name="author" content="Charles Yang">
+  <link rel="alternate" hreflang="zh-CN" href="https://worldloop.github.io/posts/pointworld.html">
+  <link rel="alternate" hreflang="en" href="https://worldloop.github.io/en/posts/pointworld.html">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="wordmark" href="../../en/index.html">Robo<span>Garden</span></a>
+  <nav class="site-nav">
+    <a class="lang-switch" href="../../posts/pointworld.html" hreflang="zh-CN" lang="zh-CN" title="中文">中文</a>
+    <a class="who" href="../../en/index.html">Charles Yang</a>
+  </nav>
+</header>
+
+<article class="post">
+  <a class="back" href="../index.html">← All notes</a>
+  <p class="kicker">PointWorld · 2026.10.26</p>
+  <h1>Actions Are Points Too: PointWorld Predicts the Next Second on a W7900</h1>
+  <p class="byline"><strong>Charles Yang</strong></p>
+  <div class="figures">
+    <figure>
+  <img src="../../media/pointworld/pw-card.jpg" alt="Actions are points too: points on the gripper move forward, and points in the scene follow. Figure from the PointWorld project page.">
+  <figcaption>Actions are points too: points on the gripper move forward, and points in the scene follow. Figure from the PointWorld project page.</figcaption>
+</figure>
+  </div>
+  <div class="videos">
+    <figure>
+  <video controls playsinline preload="metadata" poster="../../media/pointworld/frame-pw-scarf.jpg">
+    <source src="../../media/pointworld/pw-scarf.mp4" type="video/mp4">
+  </video>
+  <figcaption>Folding a scarf. The same pretrained checkpoint, with no task fine-tuning.</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../../media/pointworld/frame-pw-tissue.jpg">
+    <source src="../../media/pointworld/pw-tissue.mp4" type="video/mp4">
+  </video>
+  <figcaption>Pushing a tissue box.</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../../media/pointworld/frame-pw-broom.jpg">
+    <source src="../../media/pointworld/pw-broom.mp4" type="video/mp4">
+  </video>
+  <figcaption>Sweeping with a broom.</figcaption>
+</figure>
+  </div>
+  <div class="prose">
+    <p>Look at the scarf on the table and think about how your hand would pinch one corner, and you probably already know how it will hang and which part will leave the table first. People make this kind of prediction almost effortlessly; robots have to learn it. That is what PointWorld wants to teach robots: given one or two RGB-D photos and an action you plan to execute, say where every point in the scene will go over the next second.</p>
+<p>The work comes from Stanford and NVIDIA, by Wenlong Huang, Yu-Wei Chao, Arsalan Mousavian, Ming-Yu Liu, Dieter Fox, Kaichun Mo, and Li Fei-Fei, with code, data, and checkpoints all public. Its most interesting part is not a network architecture but a bet about representation.</p>
+<h2>Three old roads for world models</h2>
+<p>A model that lets a robot &quot;think before acting&quot; is called a world model: it takes the current state and an action, and outputs the next state. There have been roughly three roads.</p>
+<p>The first is physics simulation. If the scene is built in enough detail, engines like MuJoCo can be very accurate, but every new scene needs someone to model it, with geometry, mass, and friction all required, and a gap remains between simulation and reality. The second is learned dynamics, such as particle or graph networks. They learn interaction from observations, but often assume the scene is fully visible, objects are already segmented, and materials are known. The third is video generation. Large models paint very realistically, but their response to actions is often vague, the physics does not hold up to scrutiny, and diffusion takes seconds to generate a clip, too slow for a control loop that has to try actions repeatedly.</p>
+<p>PointWorld wants to close the distance between &quot;what a person imagines at a glance&quot; and &quot;what existing models can compute&quot;: 3D, sensitive to actions, usable directly in the wild, and fast.</p>
+<h2>The bet: state and action speak the same language</h2>
+<p>PointWorld puts state and action into the same representation: 3D point flow.</p>
+<p>State is the scene point cloud. Take one shot with one or more calibrated RGB-D cameras, cut out the robot itself, back-project the remaining pixels into points, and give each point features such as color and normal. Only part of the scene is visible, with backs and occluded areas missing, and that is fine.</p>
+<p>An action is no longer a number like &quot;rotate the third joint by 0.2 radians&quot; but the robot&#x27;s own geometry: sample a few hundred points on the gripper surface from the URDF description, and push them to every future time step with forward kinematics, giving a sequence of moving robot points. This way the &quot;imagined action&quot; is always fully visible. Even if the gripper reaches behind a box, the model knows where it is.</p>
+<p>The world model&#x27;s task becomes: given the current scene points and the robot points for the next 10 steps (0.1 seconds each), compute in one forward pass the 3D displacement of every scene point over those 10 steps.</p>
+<p>The bet pays off on three levels. First, it is embodiment-agnostic. A single-arm Franka and a bimanual humanoid speak the same &quot;language of points&quot;, only with differently shaped points, so data can be mixed for learning. Second, it does not care whether the task succeeded. As long as the robot touched something and something moved, it is useful supervision; the authors compare this to &quot;next-token prediction for interaction&quot;. Third, supervision is per point and dense. To predict displacement for the whole scene correctly, the model has to implicitly figure out which object is being pushed, whether it is soft or rigid, where the hinge is, roughly what the back looks like, and account for gravity. None of these have separate labels; all of it is squeezed out by predicting motion.</p>
+<p>Put simply, the robot does not need to know its joint angles, only &quot;where my fingers will be in the next second&quot;.</p>
+<p>Still, &quot;actions are points&quot; does not mean more points are better. The paper compares sampling only a few hundred points on the gripper against sparse whole-body sampling, 2000 whole-body points, end-effector pose plus gripper opening, and joint angles plus gripper opening. On BEHAVIOR, all point-flow representations beat low-dimensional poses and joint angles, showing that expressing contact in space really helps. On the noisier DROID, whole-body point clouds are actually worse than low-dimensional representations: the many points that never touch anything drown an already sparse learning signal. Gripper points alone are best in both domains. So the more accurate form of the bet is: an action is the points that touch the world.</p>
+<h2>Data: relabeling DROID</h2>
+<p>Whether an idea is good comes down to data in the end. Real data comes from DROID: teleoperation recordings of a Franka arm in hundreds of real scenes, each trajectory with two external cameras and one wrist camera. The trouble is that DROID&#x27;s own depth is often broken in open environments, and camera extrinsics are inaccurate. Estimating depth and pose in one shot with a large reconstruction model like VGGT looks plausible, but the depth is smoothed too flat and poses can be off by tens of centimeters. For a model that has to capture contact details, such labels are noise.</p>
+<p>The authors ended up with a three-stage pipeline. First, FoundationStereo estimates depth from stereo images, which is reliable at tabletop distances. Then VGGT gives initial extrinsics, followed by optimization that aligns the robot in the depth map with the known robot mesh, bringing median error down to 1.8 cm and 1.9 degrees. Finally CoTracker3 does dense 2D tracking, lifted to 3D using depth and pose, with occluded points excluded from supervision. After this processing, more than sixty percent of DROID&#x27;s trajectories are usable, close to 200 hours of human teleoperation.</p>
+<p>Simulated data comes from BEHAVIOR-1K: bimanual, whole-body, mobile manipulation, with 3D point flow taken directly from simulator ground truth, keeping only segments where the robot actually touched something and it actually moved. Together that is about 2 million trajectories and 500 hours, which the authors call the largest 3D dynamics dataset to date. The released DROID part is 3.9 TB packed, and BEHAVIOR is 718 GB.</p>
+<h2>The model: frozen eyes plus a point cloud Transformer that queues</h2>
+<p>Scene point features are borrowed from DINOv3. The method is plain: project each 3D point into each camera&#x27;s image, first use depth to check whether it is visible in that camera, then bilinearly sample from DINOv3 ViT-L/16 patch feature maps at layers 4, 11, 17, and 23, concatenate the four layers into 4096 dimensions, average across the cameras that see it, and finally project linearly to the model width (128 for the small model, 256 for the large one). DINOv3 is entirely frozen; the authors&#x27; judgment is that its dense features already carry an &quot;this is an object&quot; prior, so no separate segmentation is needed. The paper&#x27;s ablations show this step gives a clear improvement. The number of cameras matters too: each extra camera lowers error a bit, and a model trained with a random one to three cameras is the most robust across test settings. Having seen different levels of occlusion, the model is better at inferring the parts it cannot see.</p>
+<p>Robot point features include position, color, normal, gripper opening, velocity, and acceleration, plus a time embedding so the model can tell which step a point belongs to. The scene points (step 0 only) and the robot points for all 11 steps are concatenated into one point cloud, about ten thousand points per sample, and fed together into Point Transformer V3.</p>
+<p>The clever part of PTv3 is &quot;queuing&quot;. It uses space-filling curves such as Z-order and Hilbert to arrange unordered points into a 1D sequence where neighboring points are roughly adjacent, then cuts it into segments of 256 points and does attention within each segment. Each layer uses a different ordering, so receptive fields interleave in different directions. The whole network is a U-Net: the encoder coarsens level by level with stride-2 grid pooling, and the decoder restores level by level. Each block starts with a 3×3×3 submanifold sparse convolution serving as a conditional position encoding. This convolution comes back later in the porting story.</p>
+<p>The output head is simple: PTv3 gives each scene point a feature, plus a branch of modulated raw scene features, plus a global summary from max-pooling over all robot points, through an MLP, emitting 10 steps of 3D displacement and a log variance. The paper scales the backbone from 50 million parameters up to 1 billion, and error on DROID drops roughly log-linearly with both model size and data, the same shape as familiar scaling laws in language and vision.</p>
+<h2>The training objective: only 1% to 5% of points move</h2>
+<p>Whole-scene prediction has an awkward property: the robot usually touches only a small area, the vast majority of points do not move, and with a plain L2 loss nearly all gradient teaches the model to &quot;stay still&quot;. PointWorld computes a soft &quot;moving&quot; probability for each point from the ground-truth displacement and weights the loss by it. Real data is also noisy, so a Huber loss is applied to the residuals, and the model predicts an uncertainty per point: high-uncertainty points have their error down-weighted, but the model pays a regularization term for it. Interestingly, this uncertainty has no ground truth at all, yet it learns on its own to express physical uncertainty, for example cloth edges always being harder to predict than the middle.</p>
+<p>Another key choice is &quot;chunked prediction&quot;: compute all 10 steps at once instead of rolling one step at a time. The paper compares several autoregressive approaches, and chunked prediction drifts least while needing only one forward pass. One forward pass is about 0.1 seconds, just right for sampling-based model predictive control, MPPI: randomly generate a batch of end-effector trajectories, let PointWorld rehearse each one, score by &quot;how far the target points are from the goal&quot;, and update with weights. Using the same pretrained checkpoint with no fine-tuning at all, the authors had a real Franka start from a casually taken RGB-D photo and complete tasks like pushing a tissue box, folding a scarf, opening a microwave, and sweeping with a broom.</p>
+<h2>Evaluation: first hire an expert to find fault</h2>
+<p>The metric is per-point ℓ2 error on moving points. Labels for real data are themselves noisy, and the authors handle this honestly: train a separate &quot;expert&quot; model on the test set, use its uncertainty to mark unreliable flow, and compute error only on the 80% with the highest confidence. That is <code>filtered_l2_moved</code>, the metric the README features. On the full DROID test set, the 50-million-parameter model gets 0.0331 m and the 1-billion-parameter model 0.0312 m. In one second, even points pushed far only move a few centimeters, so these numbers look close, and the paper points out that every bit of difference is obvious in the rollouts.</p>
+<h2>Porting: three pieces of CUDA on a W7900, and a story about duplicate coordinates</h2>
+<p>This run used one AMD Radeon Pro W7900D (gfx1100, 48 GB), an image with ROCm 7.14 and PyTorch 2.11, with only this card&#x27;s render node mounted in the container. The server&#x27;s root partition had only 53 GB left, not enough for several TB of data, so from DROID&#x27;s 771 shards I picked the one with the most paper test clips (110), and from BEHAVIOR took task-0000 (612), and ran upstream&#x27;s unmodified <code>eval.py</code>.</p>
+<p>PointWorld itself has almost no CUDA code; its GPU dependencies are all in PTv3&#x27;s three libraries: spconv, torch-scatter, and flash-attn, all with CUDA-only kernels. Variable-length attention was replaced with PyTorch&#x27;s SDPA: PTv3 has only a handful of distinct segment lengths, so grouping by length allows batched computation, and this card can even use the FLASH_ATTENTION backend. <code>segment_csr</code> became <code>scatter_reduce</code>. Submanifold convolution became &quot;build a neighbor table, gather for each of the 27 kernel offsets, then do matrix multiplication&quot;, keeping spconv&#x27;s KRSC weight layout so checkpoints load without conversion. When coordinates are unique, it is bit-identical to the CPU version of spconv 2.3.8.</p>
+<p>The really interesting part is duplicate coordinates. PointWorld does not voxel-deduplicate the point cloud; after discretizing at 1.5 cm, 58% of the points reaching PTv3&#x27;s first layer share a voxel with others, and for robot points it is as high as 87%: when the gripper moves slowly, its 11 time steps nearly overlap. spconv assumes unique coordinates by default. Reading its CUDA source shows it only iterates over the first 13 kernel offsets and writes back the last 13 by symmetry; as a result, in each voxel only one &quot;representative point&quot; gets all 27 offsets, the other points get only half, and which point is the representative depends on write races on the GPU. The CPU version follows yet another set of rules, and loses updates during multithreaded accumulation.</p>
+<p>The released checkpoints were trained on CUDA, and what they learned is the CUDA version&#x27;s odd rules. I implemented several semantics and compared them on 110 DROID clips: following CUDA&#x27;s rules is best; choosing a different representative point is only 0.04% worse; a clean version where &quot;everyone gets all 27 offsets&quot; actually raises error by 1.8%, and by 6% on static points; following the CPU version&#x27;s rules raises it by 3%. A library&#x27;s undefined behavior got trained into the weights this way. A port has to chase the behavior at training time, not cleaner math. A side benefit was determinism: with representative points chosen deterministically, two consecutive runs plus one more in a fresh container produced 250 metrics identical one by one.</p>
+<p>Two other issues have nothing to do with the algorithm. First, <code>import torch</code> puts the HIP runtime, along with the copy of LLVM inside libamd_comgr, into the global symbol table, and numba loaded afterward segfaults as soon as it compiles; importing numba first fixes it. Second, the core dumps from those crashes were up to 18.6 GB each and filled the shared server&#x27;s disk in one go. After deleting them, the container script got <code>--ulimit core=0</code>. The gated DINOv3 weights were not needed, since the checkpoints already contain the frozen DINOv3.</p>
+<p>The results: on the DROID subset, the 50-million-parameter model&#x27;s <code>filtered_l2_moved</code> is 0.0358 and the 1-billion-parameter model&#x27;s 0.0325, consistent in direction with the paper&#x27;s 0.0331 and 0.0312 on the full test set; on the BEHAVIOR subset, the jointly trained model&#x27;s moving-point error is 0.0119. A single-sample forward pass takes 139 ms for the small model and 300 ms for the large one. The biggest chunk is still the PyTorch submanifold convolution, about 45%; after caching the indices for each kernel offset, the large model dropped from 453 ms to 300 ms, and the next step could fuse the 27 kernel offsets into a single matrix multiplication.</p>
+<p>The code and the logs from this run are at <a href="https://github.com/charyang-ai/pointworld">charyang-ai/pointworld</a>.</p>
+  </div>
+</article>
+<footer class="site-footer">
+  <span>Charles Yang</span>
+  <a href="https://github.com/worldloop/worldloop.github.io">GitHub</a>
+</footer>
+
+
+</body>
+</html>
