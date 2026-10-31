@@ -15,6 +15,8 @@ REPRO = ROOT / "RadeonRepro"
 FFMPEG = shutil.which("ffmpeg") or r"C:\Users\charyang\AppData\Local\Microsoft\WinGet\Links\ffmpeg.exe"
 SITE = "https://worldloop.github.io"
 REPO = "https://github.com/worldloop/worldloop.github.io"
+# Base URL of the analytics Worker in analytics/; empty leaves the view counter out of the pages.
+VIEWS_API = "https://robogarden-views.worldloop.workers.dev"
 
 TOKEN = re.compile(
     r"`([^`]+)`"
@@ -271,8 +273,10 @@ def page(lang: str, rel: str, title: str, description: str, body: str, root: str
         f'  <link rel="alternate" hreflang="{LANGS[code]["html_lang"]}" href="{SITE}/{LANGS[code]["prefix"]}{rel}">'
         for code in LANGS
     )
+    views_attr = f' data-views-api="{html.escape(VIEWS_API, quote=True)}"' if VIEWS_API else ""
+    views_script = f'\n  <script src="{root}views.js" defer></script>' if VIEWS_API else ""
     return f"""<!DOCTYPE html>
-<html lang="{LANGS[lang]['html_lang']}">
+<html lang="{LANGS[lang]['html_lang']}"{views_attr}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -284,7 +288,7 @@ def page(lang: str, rel: str, title: str, description: str, body: str, root: str
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{root}styles.css">
+  <link rel="stylesheet" href="{root}styles.css">{views_script}
 </head>
 <body>
 {body}
@@ -386,7 +390,7 @@ def build_lang(lang: str) -> None:
             f"""<a class="card" href="posts/{post['slug']}.html">
   <div class="thumb"><img src="{index_root}media/{post['slug']}/thumb.jpg" alt=""></div>
   <div class="card-body">
-    <p class="meta">{html.escape(post['tag'])} · {post['date_label']}</p>
+    <p class="meta">{html.escape(post['tag'])} · {post['date_label']}<span class="views" data-views="{post['slug']}" hidden></span></p>
     <h2>{html.escape(post['title'])}</h2>
     <p class="dek">{html.escape(post['dek'])}</p>
   </div>
@@ -432,11 +436,11 @@ def build_lang(lang: str) -> None:
         )
         rel = f"posts/{post['slug']}.html"
         body = f"""{header(lang, rel, post_root)}
-<article class="post">
+<article class="post" data-slug="{post['slug']}">
   <a class="back" href="../index.html">{strings['back']}</a>
   <p class="kicker">{html.escape(post['tag'])} · {post['date_label']}</p>
   <h1>{html.escape(post['title'])}</h1>
-  <p class="byline"><strong>Charles Yang</strong></p>
+  <p class="byline"><strong>Charles Yang</strong><span class="views" data-views="{post['slug']}" hidden></span></p>
   <div class="figures">
     {figs}
   </div>
@@ -461,6 +465,7 @@ def build() -> None:
     for post in POSTS:
         copy_post_media(post)
     (DOCS / ".nojekyll").write_text("", encoding="utf-8")
+    shutil.copy2(Path(__file__).resolve().parent / "views.js", DOCS / "views.js")
     for lang in LANGS:
         build_lang(lang)
 

@@ -1,0 +1,12 @@
+name = "robogarden-views"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://worldloop.github.io"
+TZ_OFFSET = "+8 hours"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "robogarden-views"
+database_id = "c17291e7-f79f-4526-973d-139ec6291e87"

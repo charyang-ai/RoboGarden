@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>RoboGarden · 阅读统计</title>
+<style>
+  :root { --ink:#1c1914; --muted:#5e584e; --line:#e2d8c6; --paper:#f3efe6; --card:#fffdf8; --green:#1c4f3e; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.55 system-ui, "Microsoft YaHei", sans-serif; color:var(--ink); background:var(--paper); }
+  main { max-width:1080px; margin:0 auto; padding:28px 20px 60px; }
+  h1 { font-size:1.5rem; margin:0 0 18px; }
+  h2 { font-size:1.05rem; margin:0 0 10px; }
+  .bar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:22px; }
+  input, select, button { font:inherit; padding:6px 10px; border:1px solid var(--line); border-radius:6px; background:var(--card); }
+  button { background:var(--green); color:#fff; border-color:var(--green); cursor:pointer; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:18px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; }
+  section.wide { grid-column:1 / -1; }
+  table { width:100%; border-collapse:collapse; font-size:0.92rem; }
+  th, td { text-align:left; padding:5px 6px; border-bottom:1px solid var(--line); }
+  td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; }
+  .muted { color:var(--muted); }
+  .spark { display:flex; align-items:flex-end; gap:2px; height:90px; }
+  .spark div { flex:1; background:var(--green); min-height:1px; border-radius:2px 2px 0 0; }
+  .spark-labels { display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted); margin-top:4px; }
+  #msg { color:#9a4e2c; }
+</style>
+</head>
+<body>
+<main>
+  <h1>RoboGarden · 阅读统计</h1>
+  <div class="bar">
+    <input id="token" type="password" placeholder="管理令牌 ADMIN_TOKEN" size="28">
+    <select id="days">
+      <option value="7">近 7 天</option>
+      <option value="30" selected>近 30 天</option>
+      <option value="90">近 90 天</option>
+      <option value="365">近 365 天</option>
+    </select>
+    <select id="slug"><option value="">全部文章</option></select>
+    <button id="load">刷新</button>
+    <span id="msg"></span>
+  </div>
+  <div class="grid">
+    <section class="wide">
+      <h2>每篇文章</h2>
+      <table id="articles"><thead><tr><th>文章</th><th class="n">累计阅读</th><th class="n" id="recentHead">所选时段</th></tr></thead><tbody></tbody></table>
+    </section>
+    <section class="wide">
+      <h2>每日访问 <span class="muted" id="dailyTotal"></span></h2>
+      <div class="spark" id="spark"></div>
+      <div class="spark-labels"><span id="sparkFrom"></span><span id="sparkTo"></span></div>
+    </section>
+    <section>
+      <h2>来源地区（由 IP 推断，不存原始 IP）</h2>
+      <table id="regions"><thead><tr><th>国家</th><th>省/州</th><th>城市</th><th class="n">次数</th></tr></thead><tbody></tbody></table>
+    </section>
+    <section>
+      <h2>来路网站</h2>
+      <table id="referrers"><thead><tr><th>网站</th><th class="n">次数</th></tr></thead><tbody></tbody></table>
+      <h2 style="margin-top:18px">语言版本</h2>
+      <table id="langs"><thead><tr><th>语言</th><th class="n">次数</th></tr></thead><tbody></tbody></table>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+  const rows = (id, items, cells) => {
+    $(id).querySelector("tbody").innerHTML = items.length
+      ? items.map((r) => "<tr>" + cells(r).map(([v, cls]) => `<td class="${cls || ""}">${esc(v)}</td>`).join("") + "</tr>").join("")
+      : `<tr><td class="muted">暂无数据</td></tr>`;
+  };
+  $("token").value = localStorage.getItem("rg-admin-token") || "";
+
+  async function load() {
+    const token = $("token").value.trim();
+    if (!token) { $("msg").textContent = "请先填管理令牌"; return; }
+    localStorage.setItem("rg-admin-token", token);
+    $("msg").textContent = "加载中…";
+    const q = new URLSearchParams({ days: $("days").value });
+    if ($("slug").value) q.set("slug", $("slug").value);
+    const res = await fetch("/api/stats?" + q, { headers: { Authorization: "Bearer " + token } });
+    if (res.status === 401) { $("msg").textContent = "令牌不对"; return; }
+    if (!res.ok) { $("msg").textContent = "加载失败：" + res.status; return; }
+    const d = await res.json();
+    $("msg").textContent = "";
+
+    const current = $("slug").value;
+    $("slug").innerHTML = '<option value="">全部文章</option>' +
+      d.articles.map((a) => `<option value="${esc(a.slug)}"${a.slug === current ? " selected" : ""}>${esc(a.slug)}</option>`).join("");
+    $("recentHead").textContent = `近 ${d.days} 天`;
+
+    rows("articles", d.articles, (a) => [[a.slug], [a.total, "n"], [a.recent, "n"]]);
+    rows("regions", d.regions, (r) => [[r.country || "未知"], [r.region || ""], [r.city || ""], [r.n, "n"]]);
+    rows("referrers", d.referrers, (r) => [[r.referrer || "直接访问 / 站内"], [r.n, "n"]]);
+    rows("langs", d.langs, (r) => [[r.lang === "zh" ? "中文" : r.lang === "en" ? "English" : "未知"], [r.n, "n"]]);
+
+    const max = Math.max(1, ...d.daily.map((x) => x.n));
+    const total = d.daily.reduce((s, x) => s + x.n, 0);
+    $("dailyTotal").textContent = `共 ${total} 次`;
+    $("spark").innerHTML = d.daily.map((x) => `<div title="${esc(x.day)}：${x.n}" style="height:${(x.n / max) * 100}%"></div>`).join("");
+    $("sparkFrom").textContent = d.daily[0]?.day || "";
+    $("sparkTo").textContent = d.daily.at(-1)?.day || "";
+  }
+
+  $("load").addEventListener("click", () => load().catch((e) => ($("msg").textContent = String(e))));
+  $("days").addEventListener("change", () => load().catch(() => {}));
+  $("slug").addEventListener("change", () => load().catch(() => {}));
+  if ($("token").value) load().catch(() => {});
+})();
+</script>
+</body>
+</html>
