@@ -1,4 +1,4 @@
-# 几何有否决权：RoboRender 怎样把仿真轨迹渲染成能学的视频
+# 【一卡一世界】几何有否决权：为什么仿真视频训不出真桌子上的策略 | arXiv RoboRender论文复现笔记
 
 作者：AMD Charles Yang
 

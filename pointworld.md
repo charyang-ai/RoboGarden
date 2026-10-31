@@ -1,4 +1,4 @@
-# 动作也是一团点：PointWorld 在一张 W7900 上预言下一秒
+# 【一卡一世界】动作也是一团点：机器人怎样在下一秒「看见」围巾垂下来 | CVPR 2026 PointWorld论文复现笔记
 
 作者：AMD Charles Yang
 
