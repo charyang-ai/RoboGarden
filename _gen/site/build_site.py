@@ -52,6 +52,29 @@ LANGS = {
 
 POSTS = [
     {
+        "slug": "mujoco4",
+        "tag": "MuJoCo 4",
+        "date": "2026-11-12",
+        "date_label": "2026.11.12",
+        "src": {"zh": ROOT / "mujoco4.md", "en": ROOT / "en" / "mujoco4.md"},
+        "dek": {
+            "zh": "小挠度下，端部反力和欧拉-伯努利公式一致到百万分之二。挠到梁长的 6.8%，先离开的是线性公式。",
+            "en": "At small deflection the tip force matches Euler-Bernoulli to about two parts in a million. At 6.8% of the length, the linear formula is what leaves.",
+        },
+        "thumb": "mujoco4-beam.png",
+        "figures": [
+            ("mujoco4-beam.png", {
+                "zh": "维持形状所需的端部力，除以线性理论的力。绿带是公告里的 0.5%。小挠度在 1.0000，梁长的 6.8% 落到 0.980。15 到 63 段，比值不变。",
+                "en": "Tip force required to hold the shape, divided by the linear-theory force. The green band is the announced 0.5%. Small deflection sits at 1.0000; 6.8% of the length falls to 0.980. From 15 to 63 segments the ratio does not move.",
+            }),
+            ("mujoco4-plastic.png", {
+                "zh": "同一只铰先掰到 1 弧度再松开。不设屈服就回到 0。屈服 0.3 弧度时停在 0.698，虚线是应停的 0.700。",
+                "en": "The same hinge, bent to 1 radian and released. With no yield it returns to 0. With a 0.3 radian yield it rests at 0.698. The dashed line is the 0.700 it should rest at.",
+            }),
+        ],
+        "videos": [],
+    },
+    {
         "slug": "roborender",
         "tag": "RoboRender",
         "date": "2026-10-27",
@@ -346,6 +369,12 @@ def prepare_local_media() -> None:
     poster(WORK / "rr-head.mp4", WORK / "rr-head.jpg", "1")
     poster(WORK / "rr-left.mp4", WORK / "rr-left.jpg", "1")
     poster(WORK / "rr-right.mp4", WORK / "rr-right.jpg", "1")
+    figs = Path(__file__).resolve().parents[1] / "mujoco4" / "images"
+    for name in ("mujoco4-beam.png", "mujoco4-plastic.png"):
+        src = figs / name
+        if not src.exists():
+            raise SystemExit(f"missing source media: {src}")
+        copy_file(src, WORK / name)
 
 
 def copy_post_media(post: dict) -> None:

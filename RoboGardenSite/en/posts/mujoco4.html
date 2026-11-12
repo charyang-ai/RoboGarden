@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" data-views-api="https://robogarden-views.worldloop.workers.dev">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>At small deflection, MuJoCo 4&#x27;s elastic rod matches the textbook cantilever · RoboGarden</title>
+  <meta name="description" content="At small deflection the tip force matches Euler-Bernoulli to about two parts in a million. At 6.8% of the length, the linear formula is what leaves.">
+  <meta name="author" content="Charles Yang">
+  <link rel="alternate" hreflang="zh-CN" href="https://worldloop.github.io/posts/mujoco4.html">
+  <link rel="alternate" hreflang="en" href="https://worldloop.github.io/en/posts/mujoco4.html">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../styles.css">
+  <script src="../../views.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <a class="wordmark" href="../../en/index.html">Robo<span>Garden</span></a>
+  <nav class="site-nav">
+    <a class="lang-switch" href="../../posts/mujoco4.html" hreflang="zh-CN" lang="zh-CN" title="中文">中文</a>
+    <a class="who" href="../../en/index.html">Charles Yang</a>
+  </nav>
+</header>
+
+<article class="post" data-slug="mujoco4">
+  <a class="back" href="../index.html">← All notes</a>
+  <p class="kicker">MuJoCo 4 · 2026.11.12</p>
+  <h1>At small deflection, MuJoCo 4&#x27;s elastic rod matches the textbook cantilever</h1>
+  <p class="byline"><strong>Charles Yang</strong><span class="views" data-views="mujoco4" hidden></span></p>
+  <div class="figures">
+    <figure>
+  <img src="../../media/mujoco4/mujoco4-beam.png" alt="Tip force required to hold the shape, divided by the linear-theory force. The green band is the announced 0.5%. Small deflection sits at 1.0000; 6.8% of the length falls to 0.980. From 15 to 63 segments the ratio does not move.">
+  <figcaption>Tip force required to hold the shape, divided by the linear-theory force. The green band is the announced 0.5%. Small deflection sits at 1.0000; 6.8% of the length falls to 0.980. From 15 to 63 segments the ratio does not move.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/mujoco4/mujoco4-plastic.png" alt="The same hinge, bent to 1 radian and released. With no yield it returns to 0. With a 0.3 radian yield it rests at 0.698. The dashed line is the 0.700 it should rest at.">
+  <figcaption>The same hinge, bent to 1 radian and released. With no yield it returns to 0. With a 0.3 radian yield it rests at 0.698. The dashed line is the 0.700 it should rest at.</figcaption>
+</figure>
+  </div>
+  <div class="videos">
+    
+  </div>
+  <div class="prose">
+    <p>In November 2026, Google DeepMind released MuJoCo 4.0. One sentence in the announcement can be checked with a ruler: the new one-dimensional elastic rod matches Euler-Bernoulli cantilever deflection to within 0.5%. I installed 4.0.1 on the machine that holds eight Radeon Pro W7900s and asked that sentence a question. The engine does the arithmetic on the CPU. The cards were in the chassis, and this question did not call them.</p>
+<p>The first figure is the answer. The horizontal axis is how far the tip drops, as a fraction of the length. The vertical axis is the tip force required to hold that shape, divided by the force the linear theory asks for. At small deflection the ratio sits on 1.0000. At 6.8% of the length it falls to 0.980, and cutting the rod into finer pieces does not pull it back.</p>
+<h2>The question is a clamped round rod</h2>
+<p>MuJoCo 4 replaces the old cable plugin with a one-dimensional flex. The second moment of a circular section is the textbook one, πr⁴/4. Bending energy lives on a vertex between two edges, with stiffness equal to Young&#x27;s modulus times that moment, divided by the sum of the two edge lengths. A real clamp means pinning the first two vertices to the world, so the first edge cannot rotate. Pin a single point and the rod swings around it. Beam theory has not started.</p>
+<p>Linear theory says a tip force P drops the tip by PL³/(3EI). I did not wait for the dynamics to settle. A one-meter rod of one kilogram, lightly damped, has a period of more than a minute, and after that the tip still drifts. Statics is cleaner: place the rod on the curve the formula draws, call mj_inverse, read the tip force that holds the shape, and divide by P.</p>
+<p>The radius is 5 mm, Young&#x27;s modulus is 1 MPa, and the elastic length past the clamp is 1 m. From 15 segments to 31 and then to 63, the ratio does not move. The discrepancy is not the mesh.</p>
+<h2>Small deflection agrees, and large deflection is the formula leaving</h2>
+<p>When the tip drops 0.068% of the length, the holding force is 9.999979×10⁻⁷ N against a theory load of 10⁻⁶ N. The ratio is 1.0000, a relative difference of about two parts in a million. Seventeen vertices, thirty-three, and sixty-five all give that same number. The 0.5% band from the announcement is drawn on the figure. This point sits far closer to the center of the band than to its edge.</p>
+<p>At 6.8% of the length the ratio is 0.9796. A finer mesh stays in that same neighborhood. The linear formula assumes the deflection is much smaller than the length, so slopes are small next to 1. At 6.8% that assumption is already paying its bill. The rod&#x27;s stiffness did not change with the segment count.</p>
+<p>The sentence can be said more tightly after that. On the side where linear theory applies, MuJoCo 4&#x27;s round rod and the textbook are the same sentence, and the match is much tighter than the announced 0.5%. At large deflection, the linear formula is what leaves first.</p>
+<h2>Plasticity stops at the angle it should</h2>
+<p>MuJoCo 4 also gives joints ideal elastoplasticity. A hinge of stiffness 20 is bent to 1 radian, then the torque is removed. With no yield it returns to 0. With a yield of 0.3 radian it rests at 0.6975 radian, and the plastic reference stored in the state is 0.6975 as well. The elastic part gives back the yield, so the rest angle should be 0.700 radian. The difference is 0.36%. The bend that went past yield stays in the hinge. It does not sneak back to straight.</p>
+<h2>4.0.1, and the doors this check left closed</h2>
+<p>The install is 4.0.1 from 11 November, not 4.0.0 from five days earlier. In 4.0.0 the sparse Cholesky could merge rows with different descendants into one supernode and hand the Newton solver a wrong Hessian factor when the constraint Jacobian was sparse. 4.0.1 fixes that. The notes are at <a href="https://github.com/google-deepmind/mujoco/releases/tag/4.0.1">4.0.1</a>. The 0.5% sentence is in the <a href="https://github.com/google-deepmind/mujoco/discussions/3773">MuJoCo 4 announcement</a>.</p>
+<p>The Python package is now three pieces. mujoco pulls in mujoco-core and mujoco-studio. The core depends only on numpy. Studio carries Filament and the browser viewing path. This check did not open Studio, and it did not run the penetration-free cloth contact. MuJoCo Warp is the GPU backend built with NVIDIA, and it was not part of the run. On a headless machine, the rod and the hinge are what can be asked cleanly.</p>
+<p>At small deflection the rod matches the textbook. At large deflection, the linear formula is what stops matching first.</p>
+  </div>
+</article>
+<footer class="site-footer">
+  <span>Charles Yang</span>
+  <a href="https://github.com/worldloop/worldloop.github.io">GitHub</a>
+</footer>
+
+
+</body>
+</html>
