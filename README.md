@@ -10,6 +10,7 @@
 
 | 项目 | 说明 |
 | --- | --- |
+| [LeWorldModel](https://worldloop.github.io/posts/le-wm.html) | 一帧压成 192 维向量的 JEPA 世界模型：发布权重在四个环境重评，Two-Room 从头训练 |
 | [MuJoCo 4](https://worldloop.github.io/posts/mujoco4.html) | 弹性杆的小挠度对上悬臂梁公式，塑性铰停在该停的角度 |
 | [RoboRender](https://worldloop.github.io/posts/roborender.html) | 用视频模型把仿真轨迹画成可学的真实外观 |
 | [WorldScore](https://worldloop.github.io/posts/worldscore.html) | 世界生成基准：相机、物体与三维一致性拆开打分 |

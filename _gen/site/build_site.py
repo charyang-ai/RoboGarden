@@ -52,6 +52,46 @@ LANGS = {
 
 POSTS = [
     {
+        "slug": "le-wm",
+        "tag": "LeWorldModel",
+        "date": "2026-11-22",
+        "date_label": "2026.11.22",
+        "src": {"zh": ROOT / "le-wm.md", "en": ROOT / "en" / "le-wm.md"},
+        "dek": {
+            "zh": "一张画面压成 192 个数，规划在这 192 维里做完。一道正态性检验，管住了 JEPA 的坍塌。",
+            "en": "One image becomes 192 numbers, and planning happens inside those 192 dimensions. A normality test keeps the JEPA from collapsing.",
+        },
+        "thumb": "frame-lewm-cube.jpg",
+        "figures": [
+            ("lewm-results.png", {
+                "zh": "四个环境的规划成功率。浅色是论文的数，深绿是作者发布的权重在 W7900 上重评（Two-Room 和 Reacher 是三个种子、150 回合的平均），红褐色是在 W7900 上从头训练的 Two-Room，虚线是随机策略。",
+                "en": "Planning success in the four environments. Sand: the paper. Green: the authors' released checkpoints re-evaluated on the W7900 (Two-Room and Reacher are the mean of three seeds, 150 episodes). Clay: Two-Room trained from scratch on the W7900. Dashed: the random policy.",
+            }),
+            ("lewm-reacher-floor.png", {
+                "zh": "把数据集里同一个状态写回 Reacher 环境再画一张。MuJoCo 4.0.1 只画出一整块深蓝，数据集里是四格棋盘，平均差 20 个灰度级；钉回 3.11.0 后平均差 2.6，剩下的主要是机械臂边上的一圈。",
+                "en": "The same dataset state written back into the Reacher environment and rendered again. MuJoCo 4.0.1 draws one flat dark-blue floor where the dataset has a four-square checkerboard, a mean difference of 20 gray levels; pinned back to 3.11.0 the difference is 2.6, mostly a thin outline around the arm.",
+            }),
+            ("lewm-train.png", {
+                "zh": "Two-Room 从头训练 10 个 epoch，每个 epoch 结束时在留出数据上的验证损失（对数坐标）。总损失是预测损失加 0.09 倍的 SIGReg。",
+                "en": "Validation loss on held-out data at the end of each of the 10 epochs of training Two-Room from scratch (log scale). The total is the prediction loss plus 0.09 times SIGReg.",
+            }),
+        ],
+        "videos": [
+            ("lewm-pusht.mp4", "frame-lewm-pusht.jpg", {
+                "zh": "Push-T，作者发布的权重。左：智能体按 LeWM 的规划执行；中：数据集里的原轨迹；右：25 步之后的目标。",
+                "en": "Push-T with the released checkpoint. Left: the agent executing LeWM's plan; middle: the original trajectory in the dataset; right: the goal 25 steps later.",
+            }),
+            ("lewm-tworoom.mp4", "frame-lewm-tworoom.jpg", {
+                "zh": "Two-Room，在 W7900 上从头训练的权重。",
+                "en": "Two-Room with the checkpoint trained from scratch on the W7900.",
+            }),
+            ("lewm-cube.mp4", "frame-lewm-cube.jpg", {
+                "zh": "OGBench-Cube，作者发布的权重。MuJoCo 由 Mesa 的 radeonsi 驱动在 W7900 上画。",
+                "en": "OGBench-Cube with the released checkpoint. MuJoCo renders on the W7900 through Mesa's radeonsi driver.",
+            }),
+        ],
+    },
+    {
         "slug": "mujoco4",
         "tag": "MuJoCo 4",
         "date": "2026-11-12",
@@ -372,6 +412,14 @@ def prepare_local_media() -> None:
     figs = Path(__file__).resolve().parents[1] / "mujoco4" / "images"
     for name in ("mujoco4-beam.png", "mujoco4-plastic.png"):
         src = figs / name
+        if not src.exists():
+            raise SystemExit(f"missing source media: {src}")
+        copy_file(src, WORK / name)
+    lewm = Path(__file__).resolve().parents[1] / "le-wm" / "images"
+    for name in ("lewm-results.png", "lewm-reacher-floor.png", "lewm-train.png",
+                 "lewm-pusht.mp4", "lewm-tworoom.mp4", "lewm-cube.mp4",
+                 "frame-lewm-pusht.jpg", "frame-lewm-tworoom.jpg", "frame-lewm-cube.jpg"):
+        src = lewm / name
         if not src.exists():
             raise SystemExit(f"missing source media: {src}")
         copy_file(src, WORK / name)
