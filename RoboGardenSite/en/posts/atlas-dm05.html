@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-views-api="https://robogarden-views.worldloop.workers.dev">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Five Lightings, and the Robot Only Knows That One Kitchen: World Labs Atlas × DM0.5 on Radeon · RoboGarden</title>
+  <meta name="description" content="Same policy, same seeds, only the background swapped for a 3D Gaussian reconstruction of a real kitchen, and half the episodes change outcome. Rendering training data in the deployment scene lifts success by 17 points, and the gain holds on a second GPU.">
+  <meta name="author" content="Charles Yang">
+  <link rel="alternate" hreflang="zh-CN" href="https://worldloop.github.io/posts/atlas-dm05.html">
+  <link rel="alternate" hreflang="en" href="https://worldloop.github.io/en/posts/atlas-dm05.html">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../styles.css">
+  <script src="../../views.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <a class="wordmark" href="../../en/index.html">Robo<span>Garden</span></a>
+  <nav class="site-nav">
+    <a class="lang-switch" href="../../posts/atlas-dm05.html" hreflang="zh-CN" lang="zh-CN" title="中文">中文</a>
+    <a class="who" href="../../en/index.html">Charles Yang</a>
+  </nav>
+</header>
+
+<article class="post" data-slug="atlas-dm05">
+  <a class="back" href="../index.html">← All notes</a>
+  <p class="kicker">World Labs Atlas · 2026.11.25</p>
+  <h1>Five Lightings, and the Robot Only Knows That One Kitchen: World Labs Atlas × DM0.5 on Radeon</h1>
+  <p class="byline"><strong>Charles Yang</strong><span class="views" data-views="atlas-dm05" hidden></span></p>
+  <div class="figures">
+    <figure>
+  <img src="../../media/atlas-dm05/atlas-seed_agreement.png" alt="Same weights, same 50 seeds: per-seed outcome under the native render and under the 3DGS shell (green: success; orange outline: the two sides disagree). Only 6 episodes succeed on both sides, 25 succeed on one side only, and 19 fail on both.">
+  <figcaption>Same weights, same 50 seeds: per-seed outcome under the native render and under the 3DGS shell (green: success; orange outline: the two sides disagree). Only 6 episodes succeed on both sides, 25 succeed on one side only, and 19 fail on both.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/atlas-dm05/atlas-reconstruction.jpg" alt="Left: a photo held out from training. Right: the 3DGS render from the same viewpoint, 1,458,354 Gaussians, PSNR 27.9 dB, SSIM about 0.94.">
+  <figcaption>Left: a photo held out from training. Right: the 3DGS render from the same viewpoint, 1,458,354 Gaussians, PSNR 27.9 dB, SSIM about 0.94.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/atlas-dm05/atlas-relight_looks.jpg" alt="The five lightings Atlas Relight gives the same kitchen: captured, golden hour, night shift and lamp are used for training; neon is held out.">
+  <figcaption>The five lightings Atlas Relight gives the same kitchen: captured, golden hour, night shift and lamp are used for training; neon is held out.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/atlas-dm05/atlas-robot_views.jpg" alt="What the robot&#x27;s three cameras see at reset under the five lightings (the red frame is the held-out neon). Everything below the counter and the robot is rendered by MuJoCo; only the background above the counter is relit.">
+  <figcaption>What the robot&#x27;s three cameras see at reset under the five lightings (the red frame is the held-out neon). Everything below the counter and the robot is rendered by MuJoCo; only the background above the counter is relit.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/atlas-dm05/atlas-success_rates_final_en.png" alt="Closed-loop success rates measured on the R9700. Error bars are Wilson 95% intervals.">
+  <figcaption>Closed-loop success rates measured on the R9700. Error bars are Wilson 95% intervals.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/atlas-dm05/atlas-ci_vs_n_en.png" alt="Half-width of the 95% interval against the number of episodes. With a true success rate near 43%, 50 episodes give about ±13 points, 100 give about ±10, and 200 give about ±7.">
+  <figcaption>Half-width of the 95% interval against the number of episodes. With a true success rate near 43%, 50 episodes give about ±13 points, 100 give about ±10, and 200 give about ±7.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/atlas-dm05/atlas-drift_seeds_en.png" alt="The same released model, the same kitchen, the same 50 seeds: 18/50 in August, 10/50 in November. 12 seeds flip (orange outline), 10 of them from success to failure.">
+  <figcaption>The same released model, the same kitchen, the same 50 seeds: 18/50 in August, 10/50 in November. 12 seeds flip (orange outline), 10 of them from success to failure.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/atlas-dm05/atlas-xmachine_en.png" alt="Cross-machine replication. Left: success rates on the same 200 seeds on two machines. Right: the share of seeds whose outcome flips for the same model on another machine; the bottom row is a rerun on the same machine as a control.">
+  <figcaption>Cross-machine replication. Left: success rates on the same 200 seeds on two machines. Right: the share of seeds whose outcome flips for the same model on another machine; the bottom row is a rerun on the same machine as a control.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/atlas-dm05/atlas-w7900_synthetic_check.jpg" alt="Robot-view check of a synthetic room. Top: the DL3DV kitchen. Bottom: a synthetic checkerboard room. The synthetic room&#x27;s wall shows at the top of both wrist-camera views, so alignment and compositing work on the W7900D.">
+  <figcaption>Robot-view check of a synthetic room. Top: the DL3DV kitchen. Bottom: a synthetic checkerboard room. The synthetic room&#x27;s wall shows at the top of both wrist-camera views, so alignment and compositing work on the W7900D.</figcaption>
+</figure>
+  </div>
+  <div class="videos">
+    
+  </div>
+  <div class="prose">
+    <p>Same robot policy, same random seeds, exactly the same physics. Only the background changes, from the simulator&#x27;s own materials to a 3D Gaussian reconstruction of a real kitchen. The overall score barely moves: 19/50 against 18/50. Seed by seed, though, 25 of the 50 episodes change outcome. Only 6 succeed on both sides, and 19 fail on both.</p>
+<p>If the policy is that sensitive to what things look like, using a world model to build its training scenes is tempting. World Labs&#x27; new world model Atlas (the beta is called Marble 2 Beta) takes a photo and a new camera position and draws what you would see from there, with a depth value for every pixel; its Relight feature can also relight an existing 3D scene. I used it to relight the training scenes for Dexmal&#x27;s DM0.5 and then ran closed-loop evaluation on BiGym&#x27;s dishwasher task. This is the Radeon replication note, and it answers three more &quot;engineering&quot; questions: how the pipeline from real capture to closed-loop evaluation is built step by step on AMD Radeon; how far the one gain that held up (rendering training data in the deployment scene, 17 points higher DM0.5 success) can be trusted; and whether those 17 points are still there when the same recipe runs on another card.</p>
+<p>The conclusion first: rendering training data in the deployment scene lifts DM0.5&#x27;s closed-loop success from 26.5% to 43.5% (200 seeds), and the gain replicates on both the R9700 and the W7900D. The earlier &quot;did not replicate&quot; on the W7900D was just 50 episodes being too few. Whichever card you train on or evaluate on, the overall score differs by only a few points, but with the same seed on another machine, about one in five episodes changes outcome.</p>
+<h2>The replication map: which step runs on which card</h2>
+<p>This series is called &quot;one card, one world&quot;, and the earlier notes were mostly done on a single W7900. This pipeline is longer and uses two machines, so here is the full ledger.</p>
+<p>Reconstructing the DL3DV kitchen photos into 3D Gaussians runs locally on one Radeon PRO W7900D (gfx1100, 48 GB). Relighting the Gaussians happens in World Labs&#x27; cloud, in the web version of Marble, and the relit colors are then carried back onto the original scene on a laptop CPU. Re-rendering the expert demonstrations in the five scenes, LoRA fine-tuning DM0.5, and closed-loop evaluation all run on server A, which has Radeon AI PRO R9700 cards (gfx1201, 32 GB): re-rendering is split into 16 shards, each fine-tuning run uses 3 cards, and evaluation runs one process per card. The cross-machine replication runs on server B, an 8-card Radeon PRO W7900D machine: training one more LoRA takes 3 cards, each of the three models is evaluated on both machines, and evaluation is one process per card. Generating new kitchens from text goes through World Labs&#x27; Atlas API, with re-rendering and alignment on the W7900D.</p>
+<p>Every individual job fits on one card: reconstruction uses one W7900D, evaluation uses one card per episode, and training uses 3 cards to reach an effective batch of 48. What follows goes in pipeline order.</p>
+<h2>Reconstructing the kitchen on one W7900D, then putting it into MuJoCo</h2>
+<p>The scene is a commercial kitchen from the DL3DV-10K dataset. I reconstructed it on one Radeon PRO W7900D with the HIP build of OpenSplat: 1,458,354 Gaussians, PSNR 27.9 dB and SSIM about 0.94 on a held-out photo.</p>
+<p>To use it as the simulator&#x27;s background takes three more things. Alignment: a rigid transform with scale puts it into MuJoCo&#x27;s world coordinates, with the floor at z = 0. Rasterization: the Gaussians are rendered with gsplat. gsplat 1.4.0 has no prebuilt Radeon wheel, so I built it from source for <code>gfx1201</code> on the R9700 (ROCm 7.2.3) and built it again for <code>gfx1100</code> on the W7900D. Compositing: the counter, the dishwasher, the dishes and the arms are still rendered by MuJoCo and layered in front of the Gaussian background using MuJoCo&#x27;s segmentation map, for the head camera and both wrist cameras. The Gaussians are appearance only and take no part in any collision.</p>
+<p>The physics model is therefore bit-for-bit unchanged (126 bodies, 421 geoms), and only what the three cameras see differs. The 25 flipped episodes at the top were measured under these two renderings with the same weights and the same seeds.</p>
+<h2>The Gaussian transform: a color-only job</h2>
+<p>Atlas&#x27;s Relight gave this kitchen four training lightings on the web (captured, golden hour, night shift, lamp) and one held-out lighting (neon). The exported PLY keeps the number and order of the Gaussians but bakes the lighting into the color and keeps only degree-0 spherical harmonics.</p>
+<p>The key to the engineering is to transfer color only and leave geometry alone. Each exported Gaussian is matched back to the original scene by position, exactly, across the three layers of wall, chandelier and floor. The degree-0 harmonics (the base color) are taken straight from the relit result. The higher-order harmonics are multiplied per channel by the brightness ratio &quot;relit export / unlit export&quot;, clipped to between 0 and 4. Position, orientation, scale and opacity stay byte-for-byte identical, so the original alignment file still applies and nothing on the simulator side changes.</p>
+<p>The ceiling on the result is here too: averaged over 519 frames, the pixels the relighting touches are about 1% of the head camera, about 2% of the right wrist, and 15–17% of the left wrist. The head camera spends most of its time looking down at the dishwasher and drawers, where the background fills only a corner.</p>
+<h2>Recipe and throughput</h2>
+<p>BiGym ships 32 expert demonstrations, recorded under MuJoCo 3.1.5 and BiGym 4.0. After moving to MuJoCo 3.10 and BiGym 4.1, 30 of them still replay successfully, and every group uses those 30. The scene is appearance only, so the demonstrations can be replayed with the original actions: the robot walks exactly the same trajectory and only the three images change.</p>
+<p>There are four training sets. Native render (control): BiGym&#x27;s own materials, no 3DGS, 30 episodes, 19,719 frames. Single-scene 3DGS: the 3DGS kitchen under its original lighting, the same as the evaluation, 30 episodes, 19,719 frames. Four lightings: original, dusk, night shift and lamp, 120 episodes, 78,876 frames. 100 demonstrations (control): in the 3DGS kitchen, the 30 official demonstrations plus 70 privileged-expert demonstrations, 100 episodes, 65,468 frames.</p>
+<p>All groups use the same recipe, adding a new LoRA on top of the released checkpoint: rank 32, alpha 16; global batch 48 (8 per card × 3 cards × 2 gradient accumulation); 1,000 steps; peak learning rate 5e-4 with 100 warmup steps; normalization statistics from the release, from which the official demonstrations deviate by less than 0.03 standard deviations. Evaluation uses the repository&#x27;s strict 3DGS closed-loop evaluator: 20 Hz control, 8 of every 16 predicted steps executed, at most 800 steps.</p>
+<p>The timings on the two cards follow, with the conditions in the sentences; this is not a strict benchmark. Re-rendering one demonstration (three 3DGS cameras) takes about 115 seconds on the R9700. One LoRA training step (3 cards, global batch 48) takes 15–17 seconds on the R9700 and 13.9 seconds on the W7900D. One evaluation episode takes about 170 seconds on the R9700 with one process per card; on the W7900D it takes about 138 seconds with one process per card (only 1 episode measured) and about 180 seconds with two processes per card (averaged over 50 episodes). One DM0.5 inference (BF16, 10 diffusion steps) takes about 670 ms on the R9700 with one process per card, and about 720 ms on the W7900D with one process per card and 780–810 ms with two.</p>
+<p>Most of an evaluation episode&#x27;s time is 3DGS rendering: an episode without the shell takes only about 69 seconds on the R9700. The W7900D&#x27;s 48 GB fits two evaluation processes; each runs slower, but one card finishes an episode in about 90 seconds on average. Re-rendering the 120 episodes for the four lightings takes 3.8 GPU hours in total, and one LoRA takes about 4.5 hours on the R9700.</p>
+<h2>Results</h2>
+<p>All closed-loop success rates below were measured on the R9700. Under the original lighting: the released model without fine-tuning 53/200 (26.5%), the native-render LoRA 53/200 (26.5%), the single-scene 3DGS LoRA 87/200 (43.5%), the four-lighting LoRA 64/200 (32%), and the 100-demonstration LoRA 27/100 (27%). Under the held-out neon lighting: the released model 31/100 (31%), the single-scene 3DGS LoRA 36/100 (36%), and the four-lighting LoRA 31/100 (31%).</p>
+<p>Paired comparisons use McNemar&#x27;s exact test, each pair on the same seeds. Single-scene against released, 200 seeds, 87 against 53, p = 0.0002. Single-scene against native render, 200 seeds, 87 against 53, p = 0.0001. Native render against released, 200 seeds, 53 against 53, p = 1.0. Single-scene against four lightings, 200 seeds, 87 against 64, p = 0.003. Single-scene against 100 demonstrations, 100 seeds, 41 against 27, p = 0.009. Under neon, four lightings against released, 100 seeds, 31 against 31, p = 1.0. The last 100 seeds of the released model were measured on 16 November on the same R9700.</p>
+<p>In one sentence: rendering training data in the deployment scene helps, fine-tuning in some other rendering does not, and varying the lighting adds nothing on top. The native-render LoRA and the un-tuned release are identical over 200 seeds, 53 each, which says the gain does not come from &quot;1,000 more steps of training&quot; but from the images matching the deployment environment. Why varying the lighting did not help, and why adding more demonstrations made things worse, I leave aside here; this note stays on the 17 points.</p>
+<h2>Do not let 50 episodes fool you</h2>
+<p>Every closed-loop episode takes two or three minutes, so samples are expensive, and that is exactly where it is easiest to fool yourself statistically.</p>
+<p>First, the error at 50 episodes is bigger than you think. With a true success rate near 43%, the 95% interval is about ±13 points at 50 episodes, about ±10 at 100, and about ±7 at 200.</p>
+<p>Second, measuring the same model twice also gives different answers. The same released model, the same kitchen and the same 50 seeds scored 18/50 in August and 10/50 in November, with 12 seeds flipping, 10 of them from success to failure. The software versions and rendering patches changed between August and November, and several processes shared the GPU during evaluation; measuring again on the same November day gave 11/50, almost the same as 10/50. So a single evaluation is stable in itself, and the change of environment between the two runs is enough to open a 16-point gap (paired p = 0.039).</p>
+<p>Third, adding samples after seeing the result has to be disclosed honestly. Single-scene against native render differed by only 11 points over the first 100 seeds (p = 0.071). I decided to re-test on 100 fresh seeds only after seeing that result. So that &quot;adding samples&quot; does not inflate the evidence, the re-test is read on its own: 46 against 23 (p = 0.0004), same direction, and only after that are they pooled into the 200 seeds above.</p>
+<p>The rule that follows: compare only within one environment, pair every comparison on the same seeds, and run at least 100 episodes per group.</p>
+<h2>Does the 17-point gain survive a change of card</h2>
+<p>Earlier on the W7900D, the single-scene LoRA trained from scratch with the same recipe scored only 15/50 over 50 episodes, against 14/50 for the released model on the same machine. It looked like it had not replicated. There were three candidate causes: a different card for training, a different card for evaluation, or 50 episodes being too few.</p>
+<p>To pull them apart I ran a 2×2. Two single-scene LoRAs, one trained on the R9700 and one on the W7900D, with identical data and recipe. Together with the released model, the weights of all three models were copied to both machines and evaluated on the same 200 seeds, with the same evaluator, arguments and kitchen scene. The two machines ran 1,200 closed-loop episodes in total.</p>
+<p>The released model without fine-tuning scored 53/200 (26.5%) on the R9700 and 54/200 (27.0%) on the W7900D. The single-scene LoRA trained on the R9700 scored 87/200 (43.5%) and 88/200 (44.0%) on the two. The single-scene LoRA trained on the W7900D scored 77/200 (38.5%) and 82/200 (41.0%). Three things can be read from this.</p>
+<p>First, the gain holds on both cards. Compared pairwise on the same machine, both LoRAs beat the released model by 12 to 17 percentage points: p = 0.0002 and 0.012 on the R9700, p = 0.0004 and 0.005 on the W7900D. The earlier &quot;did not replicate&quot; was too few samples: the same W7900D-trained LoRA, extended to 200 seeds, scores 82 against 54 on the W7900D.</p>
+<p>Second, where you train makes no visible difference. The two LoRAs differ by 5 points on the R9700 (p = 0.20) and by 3 points on the W7900D (p = 0.50), both inside the noise. One caveat: apart from the hardware, the two training runs also differ in their randomness, and this experiment cannot separate the two. To separate them you would train several times on the same machine with different random seeds.</p>
+<p>Third, where you evaluate: the total is stable, the individual episode is not. The same model&#x27;s success rate differs by at most 2.5 points between the two machines. Seed by seed, though, 18% to 26% of the seeds change outcome on another machine, against only 2% when the same machine runs again. My guess is that small differences between the two architectures in floating-point order and rendering get amplified step by step over an 800-step closed loop. Fortunately the flips are symmetric: the released model has 23 seeds that succeed only on the R9700 and 24 only on the W7900D, so the total holds steady.</p>
+<p>A single episode&#x27;s outcome is nearly chaotic with respect to the hardware; the only thing that travels across machines is the total over enough episodes. That adds a line to the rule above: do paired comparisons on one machine, compare only totals across machines, and make sure there are enough episodes.</p>
+<h2>Pitfalls on ROCm</h2>
+<p>A silent segmentation-render error. When several EGL renderers work at once, MuJoCo&#x27;s read of the segmentation image occasionally returns color data and raises an IndexError, and when it raises, the scene&#x27;s segmentation flag is not reset. After that, every RGB frame comes out in segmentation colors, the cabinets turn dark red, and nothing reports an error. The first batch of data and training had to be thrown away and redone. The fixed patch resets the flag, forces RGB rendering with segmentation off, and rejects frames that look like segmentation images; in the final evaluation each process re-rendered segmentation 21 to 157 times and rejected 0 RGB frames.</p>
+<p>Three GPU numbering schemes. rocm-smi, the ROCm runtime (<code>ROCR_VISIBLE_DEVICES</code>) and EGL (<code>MUJOCO_EGL_DEVICE_ID</code>) can number the same card differently: on the R9700 machine, card 7 in rocm-smi is card 4 to the runtime, and on the W7900D machine EGL&#x27;s order is exactly the reverse of rocm-smi&#x27;s. The repository&#x27;s own training and evaluation scripts are correct only on card 0. My scripts use rocm-smi numbering everywhere and convert by PCI bus.</p>
+<p>gsplat&#x27;s just-in-time compilation. Every process relinks the extension when it loads, and several processes sharing one cache directory read a half-written <code>.so</code>. I changed it to one private cache per job.</p>
+<p>A shared server. On the R9700 machine other users occasionally take cards, which once left a training run and several evaluation shards out of memory. Evaluation now schedules in chunks by free memory, retries failures automatically, and reruns only the missing seeds.</p>
+<p>One card resets and takes the machine&#x27;s whole evaluation down with it. During the cross-machine replication, the W7900D machine initially ran two evaluation processes per card, and the 16 processes all exited together after about 11 episodes each. The kernel log shows a gfxhub page fault on card 2, then, a dozen seconds later, the MES (the firmware on the GPU that schedules queues) on card 7 stopped responding and the driver did a mode1 reset on it. That one reset took out the evaluation processes on all 8 cards of the machine. The rerun uses one process per card, chunks of 8 seeds, automatic retry of failed chunks, and no repeat of seeds already finished.</p>
+<p>Changing cards does not change the code, but three things change: the architecture number, the numbering table and the cache directory.</p>
+<h2>Atlas new worlds: how far it got on the W7900D</h2>
+<p>Relight only changes the lighting; what Atlas really excels at is building a whole room from text. This part sits on the W7900D: text-to-image, localization, filling in 24 views with depth in one request, and rebuilding a draft splat go through the Atlas API, while re-render checks, alignment and gating run locally. The design of the camera positions, the prompt and the gate is not covered here.</p>
+<p>The pipeline was tested offline with a synthetic room: with the coordinate convention right, the re-render PSNR is 51 dB, and with it deliberately flipped it drops to 7.6 dB; the estimated eye height is 1.59 m, matching the 1.6 m that was set. But the five Atlas worlds themselves have not been generated yet. When I checked the server on 15 November the worlds directory was still empty, waiting for API quota.</p>
+<h2>Takeaways</h2>
+<p>Align first, diversify later. In this task, &quot;training and deployment are the same scene&quot; works before &quot;more varied scenes&quot; does, and fine-tuning in an unrelated rendering amounts to not training.</p>
+<p>A conclusion has to pass statistics first. Fifty episodes can hide a real 17 points, and can also invent ten-odd points out of nothing. Pairing, enough seeds, and a second machine: I would not state a conclusion missing any one of them.</p>
+<p>Do not chase a single seed across machines. The same seed on another machine changes outcome one time in five. Staring at one episode to ask why it differs between two machines is most likely chasing noise.</p>
+<p>The evaluation pipeline has to survive a GPU reset. One reset can take every process on a machine with it. Chunked scheduling, retries and rerunning only the missing seeds are far more dependable than running everything in one go.</p>
+<p>The Atlas new worlds are the next step. The pipeline already works end to end on the W7900D, and as soon as quota arrives it will generate five kitchens and use the same 2×2 idea to measure what &quot;having seen more kitchens&quot; is actually worth.</p>
+<h2>Three things to take away</h2>
+<p>Rendering training data in the deployment scene lifts DM0.5&#x27;s closed-loop success from 26.5% to 43.5%, and it replicates on both the R9700 and the W7900D; fine-tuning in the native render gives no gain at all.</p>
+<p>Varying the lighting adds nothing; the 50-episode &quot;did not replicate&quot; was too small a sample, and 200 seeds brought it back.</p>
+<p>The same model and the same seed change outcome about one time in five on another machine: keep paired comparisons on one machine, and across machines compare totals only.</p>
+<p>Links: World Labs Atlas announcement <a href="https://www.worldlabs.ai/blog/atlas">https://www.worldlabs.ai/blog/atlas</a> ; DL3DV-10K <a href="https://huggingface.co/datasets/DL3DV/DL3DV-ALL-2K">https://huggingface.co/datasets/DL3DV/DL3DV-ALL-2K</a> ; BiGym <a href="https://github.com/chernyadev/bigym">https://github.com/chernyadev/bigym</a> ; DM0.5 <a href="https://huggingface.co/Dexmal/DM05">https://huggingface.co/Dexmal/DM05</a> ; OpenDM <a href="https://github.com/dexmal/opendm">https://github.com/dexmal/opendm</a> ; gsplat <a href="https://github.com/nerfstudio-project/gsplat">https://github.com/nerfstudio-project/gsplat</a></p>
+<p>DL3DV-10K is licensed CC BY-NC 4.0, for non-commercial research use only.</p>
+  </div>
+</article>
+<footer class="site-footer">
+  <span>Charles Yang</span>
+  <a href="https://github.com/worldloop/worldloop.github.io">GitHub</a>
+</footer>
+
+
+</body>
+</html>

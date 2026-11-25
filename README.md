@@ -10,6 +10,7 @@
 
 | 项目 | 说明 |
 | --- | --- |
+| [World Labs Atlas × DM0.5](https://worldloop.github.io/posts/atlas-dm05.html) | 把真实厨房的 3D 高斯重新打光来训练 DM0.5：17 个点的提升在 R9700 与 W7900D 上都复现，同一个种子换台机器五分之一会换结局 |
 | [LeWorldModel](https://worldloop.github.io/posts/le-wm.html) | 一帧压成 192 维向量的 JEPA 世界模型：发布权重在四个环境重评，Two-Room 从头训练 |
 | [MuJoCo 4](https://worldloop.github.io/posts/mujoco4.html) | 弹性杆的小挠度对上悬臂梁公式，塑性铰停在该停的角度 |
 | [RoboRender](https://worldloop.github.io/posts/roborender.html) | 用视频模型把仿真轨迹画成可学的真实外观 |

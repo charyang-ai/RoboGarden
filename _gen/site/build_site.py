@@ -52,6 +52,69 @@ LANGS = {
 
 POSTS = [
     {
+        "slug": "atlas-dm05",
+        "tag": "World Labs Atlas",
+        "date": "2026-11-25",
+        "date_label": "2026.11.25",
+        "src": {"zh": ROOT / "atlas-dm05.md", "en": ROOT / "en" / "atlas-dm05.md"},
+        "dek": {
+            "zh": "同一个策略、同一批种子，只把背景换成一间真实厨房的 3D 高斯，一半回合换了结局。在部署场景里渲染训练数据，成功率高 17 个点，换到另一张卡上仍然成立。",
+            "en": "Same policy, same seeds, only the background swapped for a 3D Gaussian reconstruction of a real kitchen, and half the episodes change outcome. Rendering training data in the deployment scene lifts success by 17 points, and the gain holds on a second GPU.",
+        },
+        "thumb": "atlas-thumb.jpg",
+        "figures": [
+            ("atlas-seed_agreement.png", {
+                "zh": "同一份权重、同一批 50 个种子，原生画面和 3DGS 外壳下逐种子的成败（绿：成功，橙框：两边结局不同）。两边都成功的只有 6 个，25 个回合只在其中一边成功，19 个两边都失败。",
+                "en": "Same weights, same 50 seeds: per-seed outcome under the native render and under the 3DGS shell (green: success; orange outline: the two sides disagree). Only 6 episodes succeed on both sides, 25 succeed on one side only, and 19 fail on both.",
+            }),
+            ("atlas-reconstruction.jpg", {
+                "zh": "左边是训练时没用过的原始照片，右边是同一机位的 3DGS 渲染：1,458,354 个高斯，PSNR 27.9 dB，SSIM 约 0.94。",
+                "en": "Left: a photo held out from training. Right: the 3DGS render from the same viewpoint, 1,458,354 Gaussians, PSNR 27.9 dB, SSIM about 0.94.",
+            }),
+            ("atlas-relight_looks.jpg", {
+                "zh": "Atlas Relight 给同一间厨房打的五种光照：原始、金色黄昏、夜班、台灯用于训练，霓虹留出不训练。",
+                "en": "The five lightings Atlas Relight gives the same kitchen: captured, golden hour, night shift and lamp are used for training; neon is held out.",
+            }),
+            ("atlas-robot_views.jpg", {
+                "zh": "复位时机器人三路相机在五种光照下看到的画面（红框是留出的霓虹）。台面以下和机器人都由 MuJoCo 渲染，只有台面以上的背景被重新打光。",
+                "en": "What the robot's three cameras see at reset under the five lightings (the red frame is the held-out neon). Everything below the counter and the robot is rendered by MuJoCo; only the background above the counter is relit.",
+            }),
+            (
+                {"zh": "atlas-success_rates_final.png", "en": "atlas-success_rates_final_en.png"},
+                {
+                    "zh": "在 R9700 上测得的闭环成功率，误差线是 Wilson 95% 区间。",
+                    "en": "Closed-loop success rates measured on the R9700. Error bars are Wilson 95% intervals.",
+                },
+            ),
+            (
+                {"zh": "atlas-ci_vs_n.png", "en": "atlas-ci_vs_n_en.png"},
+                {
+                    "zh": "95% 区间半宽随评测回合数的变化。真实成功率在 43% 上下时，50 个回合约正负 13 个点，100 个回合约正负 10 个点，200 个回合约正负 7 个点。",
+                    "en": "Half-width of the 95% interval against the number of episodes. With a true success rate near 43%, 50 episodes give about ±13 points, 100 give about ±10, and 200 give about ±7.",
+                },
+            ),
+            (
+                {"zh": "atlas-drift_seeds.png", "en": "atlas-drift_seeds_en.png"},
+                {
+                    "zh": "同一个发布版模型、同一间厨房、同一批 50 个种子：8 月 18/50，11 月 10/50，12 个种子翻转（橙框），其中 10 个由成功变失败。",
+                    "en": "The same released model, the same kitchen, the same 50 seeds: 18/50 in August, 10/50 in November. 12 seeds flip (orange outline), 10 of them from success to failure.",
+                },
+            ),
+            (
+                {"zh": "atlas-xmachine.png", "en": "atlas-xmachine_en.png"},
+                {
+                    "zh": "跨机器复现。左：同一批 200 个种子在两台机器上的成功率；右：同一个模型、同一个种子换一台机器后结果翻转的比例，最下面一行是同一台机器重跑一遍作为对照。",
+                    "en": "Cross-machine replication. Left: success rates on the same 200 seeds on two machines. Right: the share of seeds whose outcome flips for the same model on another machine; the bottom row is a rerun on the same machine as a control.",
+                },
+            ),
+            ("atlas-w7900_synthetic_check.jpg", {
+                "zh": "合成房间的机器人视角检查。上排是 DL3DV 厨房，下排是合成的棋盘格房间。两个腕部相机的画面顶部都能看到合成房间的墙，说明对齐和合成在 W7900D 上是通的。",
+                "en": "Robot-view check of a synthetic room. Top: the DL3DV kitchen. Bottom: a synthetic checkerboard room. The synthetic room's wall shows at the top of both wrist-camera views, so alignment and compositing work on the W7900D.",
+            }),
+        ],
+        "videos": [],
+    },
+    {
         "slug": "le-wm",
         "tag": "LeWorldModel",
         "date": "2026-11-22",
@@ -423,6 +486,16 @@ def prepare_local_media() -> None:
         if not src.exists():
             raise SystemExit(f"missing source media: {src}")
         copy_file(src, WORK / name)
+    atlas = Path(__file__).resolve().parents[1] / "atlas-dm05" / "images"
+    if not atlas.exists():
+        raise SystemExit(f"missing source media: {atlas}")
+    for src in sorted(atlas.iterdir()):
+        copy_file(src, WORK / f"atlas-{src.name}")
+
+
+def fig_file(name, lang: str) -> str:
+    """A figure is one file, or {lang: file} when its labels are in the figure itself."""
+    return name[lang] if isinstance(name, dict) else name
 
 
 def copy_post_media(post: dict) -> None:
@@ -439,7 +512,8 @@ def copy_post_media(post: dict) -> None:
     else:
         copy_file(src_thumb, folder / "thumb.jpg")
     for name, _ in post["figures"]:
-        copy_file(WORK / name, folder / name)
+        for lang in LANGS:
+            copy_file(WORK / fig_file(name, lang), folder / fig_file(name, lang))
     for name, poster_name, _ in post["videos"]:
         src_name = {
             "banana.mp4": "banana-src.mp4",
@@ -497,7 +571,7 @@ def build_lang(lang: str) -> None:
         media = f"{post_root}media/{post['slug']}"
         figs = "\n".join(
             f"""<figure>
-  <img src="{media}/{name}" alt="{html.escape(caption[lang])}">
+  <img src="{media}/{fig_file(name, lang)}" alt="{html.escape(caption[lang])}">
   <figcaption>{html.escape(caption[lang])}</figcaption>
 </figure>"""
             for name, caption in post["figures"]
