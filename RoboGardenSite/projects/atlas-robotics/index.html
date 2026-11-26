@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>World Labs Atlas for Robotics: Edit 3D Worlds, Train a VLA · RoboGarden</title>
+  <meta name="description" content="A real kitchen rebuilt as 3D Gaussians, relit with World Labs Atlas, and used to fine-tune and test a vision-language-action robot policy in closed loop on AMD Radeon PRO GPUs.">
+  <meta name="author" content="Charles Yang">
+  <link rel="canonical" href="https://worldloop.github.io/projects/atlas-robotics/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="World Labs Atlas for Robotics: Edit 3D Worlds, Train a VLA">
+  <meta property="og:description" content="A real kitchen rebuilt as 3D Gaussians, relit with World Labs Atlas, and used to fine-tune and test a vision-language-action robot policy in closed loop on AMD Radeon PRO GPUs.">
+  <meta property="og:url" content="https://worldloop.github.io/projects/atlas-robotics/">
+  <meta property="og:image" content="https://worldloop.github.io/media/atlas-robotics/kitchen_render.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../styles.css">
+  <link rel="stylesheet" href="project.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="wordmark" href="../../en/index.html">Robo<span>Garden</span></a>
+  <nav class="site-nav">
+    <a class="who" href="../../en/index.html">Charles Yang</a>
+  </nav>
+</header>
+
+<main class="proj">
+  <section class="proj-hero">
+    <p class="kicker">Project · AMD @ NeurIPS 2026</p>
+    <h1>World Labs Atlas for Robotics: Edit 3D Worlds, Train a VLA</h1>
+    <p class="lede">A real kitchen is rebuilt as 1.46 million 3D Gaussians. World Labs Atlas changes how that world looks. Robot demonstrations are then re-rendered inside it to fine-tune a vision-language-action (VLA) policy, and the policy is tested in closed loop. Reconstruction, rendering, training and testing run on AMD Radeon™ PRO GPUs with ROCm™.</p>
+    <div class="btn-row">
+      <a class="btn primary" href="#results">See the results</a>
+      <a class="btn" href="../../en/posts/atlas-dm05.html">Read the write-up</a>
+      <a class="btn" href="#contact">Contact</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>1.46M</b><span>3D Gaussians: a real commercial kitchen, reconstructed on one Radeon™ PRO W7900D</span></div>
+      <div class="stat"><b>5</b><span>looks of one kitchen: the capture plus four from World Labs Relight, one of them held out</span></div>
+      <div class="stat"><b>27% → 41%</b><span>closed-loop task success on Radeon™ PRO W7900D after fine-tuning in the 3DGS kitchen</span></div>
+      <div class="stat"><b>1,200</b><span>closed-loop episodes in the two-machine check, 200 seeds per cell</span></div>
+    </div>
+    <figure class="hero-shot">
+      <video controls muted playsinline preload="metadata" poster="../../media/atlas-robotics/robot_task.jpg">
+        <source src="../../media/atlas-robotics/robot_task.mp4" type="video/mp4">
+      </video>
+      <figcaption>The demo in 56 seconds: pick a look for the 3DGS kitchen, then watch the same policy unload cutlery from the dishwasher into the drawer in the captured lighting and in a neon look it never saw in training.</figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="how">
+    <p class="eyebrow">How it works</p>
+    <h2>From photos of a room to a tested robot policy</h2>
+    <p class="sec-lede">The world model decides what the world looks like. The physics simulator decides how it moves. Keeping the two apart is what makes a world editable without touching the robot setup.</p>
+    <div class="steps four">
+      <div class="step"><span class="n">01 · RECONSTRUCT</span><h3>Photos to 3D Gaussians</h3><p>A commercial kitchen from the DL3DV-10K dataset is reconstructed with 3D Gaussian Splatting on one Radeon™ PRO W7900D: 15,000 steps, 1,458,354 Gaussians, 27.9 dB PSNR on a held-out photo.</p></div>
+      <div class="step"><span class="n">02 · EDIT</span><h3>Change the look</h3><p>World Labs Relight, part of the Atlas-based Marble tools, re-lights the same Gaussians. Geometry stays untouched, so alignment and calibration carry over to every look.</p></div>
+      <div class="step"><span class="n">03 · RE-RENDER</span><h3>Replay the demonstrations</h3><p>Thirty expert demonstrations are replayed in MuJoCo. The robot, counter and dishwasher are simulated; the Gaussians are drawn behind them as the room. Only the three camera streams change.</p></div>
+      <div class="step"><span class="n">04 · TRAIN AND TEST</span><h3>Fine-tune, then close the loop</h3><p>Dexmal's DM0.5 VLA gets a LoRA fine-tune of 1,000 steps on three GPUs. Each model then runs the task on 200 fixed seeds, with the policy acting on rendered images at 20 Hz.</p></div>
+    </div>
+    <figure class="fig">
+      <img src="../../media/atlas-robotics/heldout_vs_render.jpg" alt="Left: a photo of the kitchen that was withheld from training. Right: the 3D Gaussian render of the same view." loading="lazy">
+      <figcaption>Left: a photo withheld from reconstruction. Right: the 3DGS render of the same view, trained on a Radeon™ PRO W7900D (PSNR 27.9 dB, SSIM 0.937).</figcaption>
+    </figure>
+  </section>
+
+  <section class="sec">
+    <p class="eyebrow">Edit the world</p>
+    <h2>One capture, five kitchens</h2>
+    <p class="sec-lede">The captured kitchen plus golden hour, night shift and lamp are used for training. Neon is kept out of training and used only to test the policy.</p>
+    <div class="duo">
+      <figure>
+        <video controls muted playsinline preload="metadata" poster="../../media/atlas-robotics/relight.jpg">
+          <source src="../../media/atlas-robotics/relight.mp4" type="video/mp4">
+        </video>
+        <figcaption>The relit looks, flown through as 3D Gaussians (35 s).</figcaption>
+      </figure>
+      <figure>
+        <img src="../../media/atlas-robotics/visual_domains.jpg" alt="The robot's head camera at the same step: default simulator materials on the left, the 3D Gaussian kitchen on the right." loading="lazy">
+        <figcaption>What the robot sees. Same seed and step: default simulator materials on the left, the 3DGS kitchen on the right. The physics model is identical in both.</figcaption>
+      </figure>
+    </div>
+    <p class="note">Lighting edits on this page are real World Labs Relight outputs. The texture edit pictured on the NeurIPS flyer is a concept image of where the demo is heading, and is labelled as such there.</p>
+  </section>
+
+  <section class="sec" id="results">
+    <p class="eyebrow">Results</p>
+    <h2>Training in the deployment scene is what moves the number</h2>
+    <p class="sec-lede">Task: BiGym <code>DishwasherUnloadCutleryLong</code>, a two-arm robot unloading cutlery from a dishwasher rack into a drawer. Every row uses the same 200 seeds, the same recipe and the captured lighting.</p>
+    <div class="panel">
+      <div class="bars"><div class="bar-row base"><div class="bar-label"><b>Released DM0.5</b><span>no fine-tuning</span></div><div class="bar-track" role="img" aria-label="Released DM0.5: 53 of 200 episodes, 26.5%"><i class="bar" style="width:44.17%"></i><i class="ci" style="left:34.78%;width:20.25%"></i></div><div class="bar-value">26.5%<small>53/200</small></div></div><div class="bar-row base"><div class="bar-label"><b>LoRA on simulator frames</b><span>same 30 demos, default MuJoCo look</span></div><div class="bar-track" role="img" aria-label="LoRA on simulator frames: 53 of 200 episodes, 26.5%"><i class="bar" style="width:44.17%"></i><i class="ci" style="left:34.78%;width:20.25%"></i></div><div class="bar-value">26.5%<small>53/200</small></div></div><div class="bar-row win"><div class="bar-label"><b>LoRA on the 3DGS kitchen</b><span>same 30 demos, rendered in the target world</span></div><div class="bar-track" role="img" aria-label="LoRA on the 3DGS kitchen: 87 of 200 episodes, 43.5%"><i class="bar" style="width:72.50%"></i><i class="ci" style="left:61.36%;width:22.69%"></i></div><div class="bar-value">43.5%<small>87/200</small></div></div><div class="bar-row mid"><div class="bar-label"><b>LoRA on four relit looks</b><span>captured, golden hour, night shift, lamp</span></div><div class="bar-track" role="img" aria-label="LoRA on four relit looks: 64 of 200 episodes, 32.0%"><i class="bar" style="width:53.33%"></i><i class="ci" style="left:43.21%;width:21.38%"></i></div><div class="bar-value">32.0%<small>64/200</small></div></div><div class="bar-row axis"><div></div><div class="bar-axis"><span>0%</span><span>20%</span><span>40%</span><span>60%</span></div><div></div></div></div>
+      <p class="fine">Closed-loop success in the 3DGS kitchen, 200 episodes per model, measured on Radeon™ AI PRO R9700. Whiskers are Wilson 95% intervals. The 3DGS-kitchen LoRA beats the simulator-frame LoRA by 17 points (paired p = 0.0001) and the four-look LoRA by 11.5 points (p = 0.003).</p>
+    </div>
+    <div class="learn">
+      <div class="step"><span class="n">01</span><h3>Match the scene first</h3><p>Fine-tuning on the default simulator look gives no gain at all: 53/200, the same as the released model. The same demonstrations rendered in the target world give 43.5%.</p></div>
+      <div class="step"><span class="n">02</span><h3>More lighting did not add more</h3><p>Training on four looks scores 32%. In the held-out neon look it scores 31/100, level with the released model; the single-scene model scores 36/100. The room fills about 1% of the head camera, so relighting changes little of what the policy sees.</p></div>
+      <div class="step"><span class="n">03</span><h3>It holds on a second GPU family</h3><p>The recipe was repeated from scratch on Radeon™ PRO W7900D and all three models were scored on both machines. Both fine-tunes beat the released model on both.</p></div>
+    </div>
+    <table class="spec xm">
+      <tr><th></th><th>Evaluated on Radeon™ AI PRO R9700</th><th>Evaluated on Radeon™ PRO W7900D</th></tr>
+      <tr><th>Released DM0.5</th><td>53/200 <b>26.5%</b></td><td>54/200 <b>27.0%</b></td></tr><tr><th>3DGS-kitchen LoRA, trained on R9700</th><td class="hi">87/200 <b>43.5%</b></td><td class="hi">88/200 <b>44.0%</b></td></tr><tr><th>3DGS-kitchen LoRA, trained on W7900D</th><td class="hi">77/200 <b>38.5%</b></td><td class="hi">82/200 <b>41.0%</b></td></tr>
+    </table>
+    <p class="fine">200 seeds per cell, 1,200 episodes in total. Paired McNemar tests against the released model on the same machine: p = 0.0002 and 0.012 on R9700, p = 0.0004 and 0.005 on W7900D. The two fine-tunes do not differ from each other (p = 0.20 and 0.50). Totals agree across machines to within 2.5 points, although 18–26% of individual seeds change outcome when the machine changes.</p>
+  </section>
+
+  <section class="sec">
+    <p class="eyebrow">Built with</p>
+    <h2>Models and data</h2>
+    <div class="partners">
+      <a class="partner atlas" href="https://www.worldlabs.ai/blog/atlas">
+        <span class="role">World model</span><h3>World Labs Atlas</h3>
+        <p>A world model that generates and reconstructs 3D scenes from text, images, camera poses and depth. Its Relight tool produced the five looks of the kitchen.</p>
+        <span class="go">worldlabs.ai/blog/atlas →</span>
+      </a>
+      <a class="partner dexmal" href="https://huggingface.co/Dexmal/DM05">
+        <span class="role">VLA policy</span><h3>Dexmal DM0.5</h3>
+        <p>A vision-language-action model. It takes three camera images, the robot state and one instruction, and predicts chunks of 16 actions. The released checkpoint is the starting point.</p>
+        <span class="go">huggingface.co/Dexmal/DM05 →</span>
+      </a>
+      <a class="partner dl3dv" href="https://huggingface.co/datasets/DL3DV/DL3DV-ALL-2K">
+        <span class="role">Scene data</span><h3>DL3DV-10K</h3>
+        <p>The dataset of real-world scenes the kitchen comes from. It is licensed CC BY-NC 4.0, for non-commercial research use.</p>
+        <span class="go">huggingface.co/datasets/DL3DV →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="sec">
+    <p class="eyebrow">Stack</p>
+    <h2>Runs on Radeon</h2>
+    <table class="spec">
+      <tr><th>GPUs</th><td>AMD Radeon™ PRO W7900D (48 GB): reconstruction on one card, fine-tuning on three, one evaluation process per card. Repeated on AMD Radeon™ AI PRO R9700 (32 GB).</td></tr>
+      <tr><th>Software</th><td>ROCm™, PyTorch, OpenSplat for reconstruction, gsplat 1.4.0 built from source for rendering, MuJoCo for physics</td></tr>
+      <tr><th>Policy</th><td>Dexmal DM0.5, LoRA rank 32, 1,000 steps, effective batch 48</td></tr>
+      <tr><th>Task</th><td>BiGym <code>DishwasherUnloadCutleryLong</code>, 30 expert demonstrations, three cameras at 20 Hz</td></tr>
+      <tr><th>Scene</th><td>DL3DV-10K commercial kitchen, 1,458,354 Gaussians. The Gaussians are appearance only; they take no part in collisions.</td></tr>
+    </table>
+  </section>
+
+  <section class="contact" id="contact">
+    <h2>Questions, collaboration, or a demo</h2>
+    <p>Charles Yang, AMD.</p>
+    <div class="btn-row">
+      <a class="btn primary" href="https://www.linkedin.com/in/charles-yang-2162b269/">LinkedIn</a>
+      <a class="btn" href="../../en/posts/atlas-dm05.html">Full write-up</a>
+      <a class="btn" href="../../en/index.html">RoboGarden notes</a>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <span>Charles Yang</span>
+  <a href="../../en/index.html">RoboGarden</a>
+</footer>
+</body>
+</html>
