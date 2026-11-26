@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>World Labs Atlas for Robotics: One Scene, Endless Worlds To Train A VLA · RoboGarden</title>
-  <meta name="description" content="A real kitchen rebuilt as 3D Gaussians, relit with World Labs Atlas, and used to fine-tune and test a vision-language-action robot policy in closed loop on AMD Radeon PRO GPUs.">
+  <meta name="description" content="A real kitchen captured as 3D Gaussians, edited with World Labs Atlas, and re-rendered as new training data to fine-tune and test a vision-language-action robot policy on AMD Radeon PRO GPUs.">
   <meta name="author" content="Charles Yang">
   <link rel="canonical" href="https://worldloop.github.io/projects/atlas-robotics/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="World Labs Atlas for Robotics: One Scene, Endless Worlds To Train A VLA">
-  <meta property="og:description" content="A real kitchen rebuilt as 3D Gaussians, relit with World Labs Atlas, and used to fine-tune and test a vision-language-action robot policy in closed loop on AMD Radeon PRO GPUs.">
+  <meta property="og:description" content="A real kitchen captured as 3D Gaussians, edited with World Labs Atlas, and re-rendered as new training data to fine-tune and test a vision-language-action robot policy on AMD Radeon PRO GPUs.">
   <meta property="og:url" content="https://worldloop.github.io/projects/atlas-robotics/">
   <meta property="og:image" content="https://worldloop.github.io/media/atlas-robotics/kitchen_render.jpg">
   <meta name="twitter:card" content="summary_large_image">
@@ -32,7 +32,7 @@
   <section class="proj-hero">
     <p class="kicker">Project · AMD @ NeurIPS 2026</p>
     <h1>World Labs Atlas for Robotics: One Scene, Endless Worlds To Train A VLA</h1>
-    <p class="lede">A real kitchen is rebuilt as 1.46 million 3D Gaussians. World Labs Atlas changes how that world looks. Robot demonstrations are then re-rendered inside it to fine-tune a vision-language-action (VLA) policy, and the policy is tested in closed loop. Reconstruction, rendering, training and testing run on AMD Radeon™ PRO GPUs with ROCm™.</p>
+    <p class="lede">A real kitchen is captured in photos and rebuilt as 1.46 million 3D Gaussians. World Labs Atlas then edits that scene, so one capture becomes many variations. Robot demonstrations are re-rendered in each variation as new training data for a vision-language-action (VLA) policy, and the policy is tested in closed loop. Reconstruction, rendering, training and testing run on AMD Radeon™ PRO GPUs with ROCm™.</p>
     <div class="btn-row">
       <a class="btn primary" href="#results">See the results</a>
       <a class="btn" href="../../en/posts/atlas-dm05.html">Read the write-up</a>
@@ -55,10 +55,10 @@
   <section class="sec" id="how">
     <p class="eyebrow">How it works</p>
     <h2>From photos of a room to a tested robot policy</h2>
-    <p class="sec-lede">The world model decides what the world looks like. The physics simulator decides how it moves. Keeping the two apart is what makes a world editable without touching the robot setup.</p>
+    <p class="sec-lede">The captured scene supplies what the robot sees, Atlas edits it, and the physics simulator decides how things move. Keeping appearance and physics apart is what lets the scene be edited without touching the robot setup.</p>
     <div class="steps four">
       <div class="step"><span class="n">01 · RECONSTRUCT</span><h3>Photos to 3D Gaussians</h3><p>A commercial kitchen from the DL3DV-10K dataset is reconstructed with 3D Gaussian Splatting on one Radeon™ PRO W7900D: 15,000 steps, 1,458,354 Gaussians, 27.9 dB PSNR on a held-out photo.</p></div>
-      <div class="step"><span class="n">02 · EDIT</span><h3>Change the look</h3><p>World Labs Relight, part of the Atlas-based Marble tools, re-lights the same Gaussians. Geometry stays untouched, so alignment and calibration carry over to every look.</p></div>
+      <div class="step"><span class="n">02 · EDIT</span><h3>Change the look</h3><p>World Labs Relight, part of the Atlas-based Marble tools, re-lights the captured Gaussians. The scene is edited, not generated: geometry stays untouched, so alignment and calibration carry over to every look.</p></div>
       <div class="step"><span class="n">03 · RE-RENDER</span><h3>Replay the demonstrations</h3><p>Thirty expert demonstrations are replayed in MuJoCo. The robot, counter and dishwasher are simulated; the Gaussians are drawn behind them as the room. Only the three camera streams change.</p></div>
       <div class="step"><span class="n">04 · TRAIN AND TEST</span><h3>Fine-tune, then close the loop</h3><p>Dexmal's DM0.5 VLA gets a LoRA fine-tune of 1,000 steps on three GPUs. Each model then runs the task on 200 fixed seeds, with the policy acting on rendered images at 20 Hz.</p></div>
     </div>
@@ -69,8 +69,8 @@
   </section>
 
   <section class="sec">
-    <p class="eyebrow">Edit the world</p>
-    <h2>One capture, five kitchens</h2>
+    <p class="eyebrow">Edit the scene</p>
+    <h2>One capture, five looks</h2>
     <p class="sec-lede">The captured kitchen plus golden hour, night shift and lamp are used for training. Neon is kept out of training and used only to test the policy.</p>
     <div class="duo">
       <figure>
@@ -92,11 +92,11 @@
     <h2>Training in the deployment scene is what moves the number</h2>
     <p class="sec-lede">Task: BiGym <code>DishwasherUnloadCutleryLong</code>, a two-arm robot unloading cutlery from a dishwasher rack into a drawer. Every row uses the same 200 seeds, the same recipe and the captured lighting.</p>
     <div class="panel">
-      <div class="bars"><div class="bar-row base"><div class="bar-label"><b>Released DM0.5</b><span>no fine-tuning</span></div><div class="bar-track" role="img" aria-label="Released DM0.5: 53 of 200 episodes, 26.5%"><i class="bar" style="width:44.17%"></i><i class="ci" style="left:34.78%;width:20.25%"></i></div><div class="bar-value">26.5%<small>53/200</small></div></div><div class="bar-row base"><div class="bar-label"><b>LoRA on simulator frames</b><span>same 30 demos, default MuJoCo look</span></div><div class="bar-track" role="img" aria-label="LoRA on simulator frames: 53 of 200 episodes, 26.5%"><i class="bar" style="width:44.17%"></i><i class="ci" style="left:34.78%;width:20.25%"></i></div><div class="bar-value">26.5%<small>53/200</small></div></div><div class="bar-row win"><div class="bar-label"><b>LoRA on the 3DGS kitchen</b><span>same 30 demos, rendered in the target world</span></div><div class="bar-track" role="img" aria-label="LoRA on the 3DGS kitchen: 87 of 200 episodes, 43.5%"><i class="bar" style="width:72.50%"></i><i class="ci" style="left:61.36%;width:22.69%"></i></div><div class="bar-value">43.5%<small>87/200</small></div></div><div class="bar-row mid"><div class="bar-label"><b>LoRA on four relit looks</b><span>captured, golden hour, night shift, lamp</span></div><div class="bar-track" role="img" aria-label="LoRA on four relit looks: 64 of 200 episodes, 32.0%"><i class="bar" style="width:53.33%"></i><i class="ci" style="left:43.21%;width:21.38%"></i></div><div class="bar-value">32.0%<small>64/200</small></div></div><div class="bar-row axis"><div></div><div class="bar-axis"><span>0%</span><span>20%</span><span>40%</span><span>60%</span></div><div></div></div></div>
+      <div class="bars"><div class="bar-row base"><div class="bar-label"><b>Released DM0.5</b><span>no fine-tuning</span></div><div class="bar-track" role="img" aria-label="Released DM0.5: 53 of 200 episodes, 26.5%"><i class="bar" style="width:44.17%"></i><i class="ci" style="left:34.78%;width:20.25%"></i></div><div class="bar-value">26.5%<small>53/200</small></div></div><div class="bar-row base"><div class="bar-label"><b>LoRA on simulator frames</b><span>same 30 demos, default MuJoCo look</span></div><div class="bar-track" role="img" aria-label="LoRA on simulator frames: 53 of 200 episodes, 26.5%"><i class="bar" style="width:44.17%"></i><i class="ci" style="left:34.78%;width:20.25%"></i></div><div class="bar-value">26.5%<small>53/200</small></div></div><div class="bar-row win"><div class="bar-label"><b>LoRA on the 3DGS kitchen</b><span>same 30 demos, rendered in the target scene</span></div><div class="bar-track" role="img" aria-label="LoRA on the 3DGS kitchen: 87 of 200 episodes, 43.5%"><i class="bar" style="width:72.50%"></i><i class="ci" style="left:61.36%;width:22.69%"></i></div><div class="bar-value">43.5%<small>87/200</small></div></div><div class="bar-row mid"><div class="bar-label"><b>LoRA on four relit looks</b><span>captured, golden hour, night shift, lamp</span></div><div class="bar-track" role="img" aria-label="LoRA on four relit looks: 64 of 200 episodes, 32.0%"><i class="bar" style="width:53.33%"></i><i class="ci" style="left:43.21%;width:21.38%"></i></div><div class="bar-value">32.0%<small>64/200</small></div></div><div class="bar-row axis"><div></div><div class="bar-axis"><span>0%</span><span>20%</span><span>40%</span><span>60%</span></div><div></div></div></div>
       <p class="fine">Closed-loop success in the 3DGS kitchen, 200 episodes per model, measured on Radeon™ AI PRO R9700. Whiskers are Wilson 95% intervals. The 3DGS-kitchen LoRA beats the simulator-frame LoRA by 17 points (paired p = 0.0001) and the four-look LoRA by 11.5 points (p = 0.003).</p>
     </div>
     <div class="learn">
-      <div class="step"><span class="n">01</span><h3>Match the scene first</h3><p>Fine-tuning on the default simulator look gives no gain at all: 53/200, the same as the released model. The same demonstrations rendered in the target world give 43.5%.</p></div>
+      <div class="step"><span class="n">01</span><h3>Match the scene first</h3><p>Fine-tuning on the default simulator look gives no gain at all: 53/200, the same as the released model. The same demonstrations rendered in the target scene give 43.5%.</p></div>
       <div class="step"><span class="n">02</span><h3>More lighting did not add more</h3><p>Training on four looks scores 32%. In the held-out neon look it scores 31/100, level with the released model; the single-scene model scores 36/100. The room fills about 1% of the head camera, so relighting changes little of what the policy sees.</p></div>
       <div class="step"><span class="n">03</span><h3>It holds on a second GPU family</h3><p>The recipe was repeated from scratch on Radeon™ PRO W7900D and all three models were scored on both machines. Both fine-tunes beat the released model on both.</p></div>
     </div>
@@ -113,7 +113,7 @@
     <div class="partners">
       <a class="partner atlas" href="https://www.worldlabs.ai/blog/atlas">
         <span class="role">World model</span><h3>World Labs Atlas</h3>
-        <p>A world model that generates and reconstructs 3D scenes from text, images, camera poses and depth. Its Relight tool produced the five looks of the kitchen.</p>
+        <p>World Labs' world model. Here it does one job: it edits a scene that was captured for real. Its Relight tool produced the four edited looks of the kitchen; the kitchen itself is not generated.</p>
         <span class="go">worldlabs.ai/blog/atlas →</span>
       </a>
       <a class="partner dexmal" href="https://huggingface.co/Dexmal/DM05">
