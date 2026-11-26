@@ -40,7 +40,7 @@ DM05 = "https://huggingface.co/Dexmal/DM05"
 DL3DV = "https://huggingface.co/datasets/DL3DV/DL3DV-ALL-2K"
 WRITEUP = "../../en/posts/atlas-dm05.html"  # the RoboGarden note with the full method and statistics
 
-TITLE = "World Labs Atlas for Robotics: Edit 3D Worlds, Train a VLA"
+TITLE = "World Labs Atlas for Robotics: One Scene, Endless Worlds To Train A VLA"  # same as page 4 of the flyer
 
 # Closed-loop success on the R9700 box, original lighting, same 200 seeds for every row (successes, episodes).
 FINETUNE = [
@@ -170,7 +170,7 @@ def build_html():
 <main class="proj">
   <section class="proj-hero">
     <p class="kicker">Project · AMD @ NeurIPS 2026</p>
-    <h1>World Labs Atlas for Robotics: Edit 3D Worlds, Train a VLA</h1>
+    <h1>{esc(TITLE)}</h1>
     <p class="lede">A real kitchen is rebuilt as 1.46 million 3D Gaussians. World Labs Atlas changes how that world looks. Robot demonstrations are then re-rendered inside it to fine-tune a vision-language-action (VLA) policy, and the policy is tested in closed loop. Reconstruction, rendering, training and testing run on AMD Radeon™ PRO GPUs with ROCm™.</p>
     <div class="btn-row">
       <a class="btn primary" href="#results">See the results</a>
