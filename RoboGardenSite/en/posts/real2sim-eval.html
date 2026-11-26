@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" data-views-api="https://robogarden-views.worldloop.workers.dev">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>To Grade a Robot in Simulation, the Rope Must Be Soft and the Colors Must Match That Camera: Real2Sim-Eval on a W7900 · RoboGarden</title>
+  <meta name="description" content="For simulation to rank policies the way the real robot does, the picture has to match that camera and the rope&#x27;s springiness has to be identified from video. On one W7900 the 27-episode rope evaluation ends 18 for 27, with the failures bunched on one side of the grid.">
+  <meta name="author" content="Charles Yang">
+  <link rel="alternate" hreflang="zh-CN" href="https://worldloop.github.io/posts/real2sim-eval.html">
+  <link rel="alternate" hreflang="en" href="https://worldloop.github.io/en/posts/real2sim-eval.html">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../styles.css">
+  <script src="../../views.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <a class="wordmark" href="../../en/index.html">Robo<span>Garden</span></a>
+  <nav class="site-nav">
+    <a class="lang-switch" href="../../posts/real2sim-eval.html" hreflang="zh-CN" lang="zh-CN" title="中文">中文</a>
+    <a class="who" href="../../en/index.html">Charles Yang</a>
+  </nav>
+</header>
+
+<article class="post" data-slug="real2sim-eval">
+  <a class="back" href="../index.html">← All notes</a>
+  <p class="kicker">Real2Sim-Eval · 2026.11.26</p>
+  <h1>To Grade a Robot in Simulation, the Rope Must Be Soft and the Colors Must Match That Camera: Real2Sim-Eval on a W7900</h1>
+  <p class="byline"><strong>Charles Yang</strong><span class="views" data-views="real2sim-eval" hidden></span></p>
+  <div class="figures">
+    <figure>
+  <img src="../../media/real2sim-eval/r2s-teaser.jpg" alt="The same policies&#x27; success rates in simulation and on the real robot line up along the diagonal; the three tasks are packing a plush toy, threading a rope through a clip, and pushing a T block. Figure from the project page.">
+  <figcaption>The same policies&#x27; success rates in simulation and on the real robot line up along the diagonal; the three tasks are packing a plush toy, threading a rope through a clip, and pushing a T block. Figure from the project page.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/real2sim-eval/r2s-method.jpg" alt="The pipeline: a phone scan, Gaussian reconstruction, position and color alignment; a soft-body digital twin identified from a video of hands handling the object; all wrapped in a Gym interface. Figure from the project page.">
+  <figcaption>The pipeline: a phone scan, Gaussian reconstruction, position and color alignment; a soft-body digital twin identified from a video of hands handling the object; all wrapped in a Gym interface. Figure from the project page.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/real2sim-eval/r2s-grid_en.png" alt="Outcomes of the 27 initial states on the W7900, laid out by x and y offset and by rotation; each cell shows the episode id.">
+  <figcaption>Outcomes of the 27 initial states on the W7900, laid out by x and y offset and by rotation; each cell shows the episode id.</figcaption>
+</figure>
+<figure>
+  <img src="../../media/real2sim-eval/r2s-steptime_en.png" alt="Median control-step time of each episode&#x27;s scored run. Every failed episode is under 3.3 s; every successful one takes 4 s or more.">
+  <figcaption>Median control-step time of each episode&#x27;s scored run. Every failed episode is under 3.3 s; every successful one takes 4 s or more.</figcaption>
+</figure>
+  </div>
+  <div class="videos">
+    <figure>
+  <video controls playsinline preload="metadata" poster="../../media/real2sim-eval/frame-r2s-sim-vs-real.jpg">
+    <source src="../../media/real2sim-eval/r2s-sim-vs-real.mp4" type="video/mp4">
+  </video>
+  <figcaption>The rope task with the same policy from the same initial state: simulation on the left, the real robot on the right. Video from the project page.</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../../media/real2sim-eval/frame-r2s-ep13.jpg">
+    <source src="../../media/real2sim-eval/r2s-ep13.mp4" type="video/mp4">
+  </video>
+  <figcaption>Episode 13 on the W7900 (x and y offsets 0, rotation 0°): the rope passes through both openings of the clip, a success. Camera 0, 30 seconds, 900 control steps.</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../../media/real2sim-eval/frame-r2s-ep14.jpg">
+    <source src="../../media/real2sim-eval/r2s-ep14.mp4" type="video/mp4">
+  </video>
+  <figcaption>Episode 14, same position, rotated 10° more: the rope ends up beside the clip, a failure.</figcaption>
+</figure>
+  </div>
+  <div class="prose">
+    <p>The most honest way to grade a robot policy is to let it do the task on the real robot, over and over. But real-robot evaluation is slow and hard to repeat. Every episode needs someone to put the rope back where it was, and how well they do it is down to feel. The same checkpoint succeeds today and fails tomorrow, and you cannot tell whether the policy is unstable or the rope just took a different bend. Training keeps getting faster; evaluation has become the slowest link.</p>
+<p>Simulation could take over the job, yet few people dare to evaluate with it, because a policy that does well in simulation does not necessarily do well on the real robot. Kaifeng Zhang, Shuo Sha, Hanxiao Jiang, Matthew Loper, Hyunjong Song, Guangyan Cai, Zhuo Xu, Xiaochen Hu, Changxi Zheng and Yunzhu Li, from Columbia, SceniX and Google DeepMind, set out to answer one question: what kind of simulator ranks policies the same way the real robot does? The paper is at ICRA 2026, and the code, data and checkpoints are public.</p>
+<h2>Evaluation needs the ranking</h2>
+<p>What this paper wants is not a good-looking simulator but a statistical promise. Run the same set of policies and checkpoints from the same initial states in simulation and on the real robot, get two sets of success rates, and look at their Pearson correlation, plus MMRV (how badly the ranking gets shuffled), borrowed from SIMPLER. The policies are trained only on real demonstrations, with not one simulated trajectory mixed in. The simulator has to answer exactly one thing: which checkpoint is better.</p>
+<p>The authors see two gaps between simulation and reality: appearance and dynamics. The policy looks at camera images, so if the images look wrong, its judgment drifts; if objects move wrong, the same action has different consequences. The three tasks are picked for hard dynamics: packing a plush toy into a box, threading a rope through the two openings of a clip, and pushing a T-shaped block to a target. The first two are soft bodies, which a traditional simulator cannot match by tuning a few global parameters.</p>
+<h2>Appearance: one iPhone and a quadratic polynomial</h2>
+<p>Appearance comes from 3D Gaussian Splatting (3DGS). One sweep around the workbench with Scaniverse on an iPhone gives Gaussian models of the robot, the table and the background; each object is scanned once more on its own, and then they are cut apart in SuperSplat. A task needs this scan only once.</p>
+<p>The scanned Gaussians still have to be aligned to the robot&#x27;s frame. Objects are aligned to PhysTwin&#x27;s particles. For the robot, 2,000 surface points are sampled from each URDF link and the transform is solved with ICP plus RANSAC; the background was scanned together with the robot, so it reuses the same transform. Each Gaussian kernel then inherits a link ID from its nearest neighbor, so when the arm moves the kernel moves with its link, and the gripper can open and close.</p>
+<p>Next comes a detail that is easy to miss: color. The Gaussians inherit the iPhone&#x27;s colors, while the policy was trained on RealSense images, and the RealSense has its own color cast. Green-screen compositing (SIMPLER&#x27;s approach) can get away with it on a third-person camera, but it falls apart on a wrist-mounted one. At fixed camera poses, the authors pair Gaussian renders with images from the real camera and fit a quadratic polynomial in RGB space, using iteratively reweighted least squares to hold down outlier pixels. The appendix is specific: five 848×480 images, Tukey biweights, 50 iterations. In the ablation, removing this step drops the rope task&#x27;s correlation from 0.901 to 0.714. What the simulation has to resemble is not the real world, but the real world as that camera sees it.</p>
+<h2>Dynamics: one rope, two thousand particles</h2>
+<p>Soft-body dynamics is handled by PhysTwin. It represents an object as particles and springs: particles within a distance threshold are joined by a spring, and every spring has its own stiffness. These parameters are optimized from a video of a human hand handling the object: the hand&#x27;s keypoints are tracked and attached to the spring system as control points, and the parameters are tuned until the simulated object moves like the one in the video. The rope in this run has 2,002 particles and 17,048 springs.</p>
+<p>Grasping is written with care. Many simulators, for stability, weld the object&#x27;s points to the gripper; here contact is friction only. The gripper stops closing when its collision force passes a threshold, and whether the grasp holds is up to friction. The Gaussians follow the particles: rigid bodies are updated with rigid transforms, soft bodies with linear blend skinning (LBS). The physics runs on NVIDIA Warp, and the authors report 5 to 30 FPS on one GPU, depending on whether there is contact.</p>
+<p>With per-spring stiffness replaced by a single global stiffness, the rope task&#x27;s correlation drops from 0.901 to 0.832. An IsaacLab baseline that approximates the rope as a chain of articulated links reaches only 0.237.</p>
+<h2>The exam rules</h2>
+<p>The evaluation protocol follows the recommendations of Kress-Gazit et al.: each task has a fixed set of initial states, and simulation and the real robot use the same set. On the real side, a live overlay tool draws the simulated initial state over the camera image, and the operator places the objects to match it. The rope task&#x27;s initial states form a 3×3×3 grid: x and y offsets of −5 to 5 cm and rotations of −10 to 10 degrees, 27 in all, 30 seconds each.</p>
+<p>Real-robot outcomes are judged by a person; in simulation they are judged automatically from privileged state. The rope counts as a success when more than 100 spring segments pass through each of the clip&#x27;s two openings and this holds for more than 30 of the last 100 frames (3.3 seconds). Across the three tasks, the full method&#x27;s correlations are 0.944 (packing), 0.901 (rope) and 0.915 (T push).</p>
+<p>The paper is fairly candid about its limits. Per-checkpoint success rates only appear in figures, not in a table. In a replay experiment that feeds the same real-robot actions into the simulation unchanged, 52 of the 405 rope trajectories still end differently from the real robot. The authors also point out that on the rope task, ACT&#x27;s absolute success rates do not line up between simulation and the real robot; only the trend agrees. What the paper shows is that the ranking can be trusted, not that every trajectory is right.</p>
+<h2>On the W7900, Warp is the first wall</h2>
+<p>This run used one AMD Radeon Pro W7900D (gfx1100, 48 GB), with a ROCm 7.14 and PyTorch 2.11 image, and only that card&#x27;s render node mounted in the container. It ran the example from the README: the rope task, ACT checkpoint <code>007000</code>, the last checkpoint of 7,000 training steps; 27 initial states, 30 seconds each, scored at the end with the repository&#x27;s own <code>calculate_success_rope.py</code>.</p>
+<p>The first wall was Warp. Warp 1.7 compiles its kernels on the spot with NVRTC and has no gfx1100 target. I rewrote the spring-mass solver in PyTorch, keeping the entry points that <code>phystwin.py</code> calls. Spring forces accumulate with <code>index_add_</code>. Self-collision neighbors come from <code>cdist</code> plus top-k instead of a hash grid. Collision with the gripper and clip meshes took the most care: first find the closest point on a triangle within 2 cm (Ericson&#x27;s closest-point algorithm), then decide inside or outside with the generalized winding number, at the original threshold of 0.6. Warp approximates the winding number with a BVH; these meshes have only a few thousand triangles, so I sum it exactly.</p>
+<p>The Gaussian rasterizer is a standard CUDA extension, and its changes were, if anything, mechanical: CUB becomes hipCUB, <code>GLM_FORCE_CUDA</code> becomes <code>GLM_FORCE_HIP</code>, <code>cooperative_groups.h</code> points to HIP&#x27;s implementation of the same name, <code>__trap()</code> becomes <code>__builtin_trap()</code>. The funniest one: hipcc does not accept the extra space in the kernel launch syntax, so <code>&lt;&lt; &lt;</code> has to be written <code>&lt;&lt;&lt;</code>.</p>
+<p>Sapien was a different kind of trouble. The project only uses it to parse the URDF and do forward and inverse kinematics; the images all come from the Gaussians. But Sapien 3 opens Vulkan as soon as it creates a scene, and the container has a render node but no Vulkan driver, so the process aborts. The patch makes scenes with only PhysX&#x27;s CPU system and drops visual meshes when loading the URDF. Along the way it brings back Sapien 2&#x27;s <code>Pose.from_transformation_matrix</code> and works around the error transforms3d 0.4.2 raises on NumPy 2 because of <code>copy=False</code>. gradio is only used for visualization, so it is now imported when needed. Finally, at process exit the destructors of Sapien and Open3D report <code>free(): invalid pointer</code>, long after the videos have been written, so the evaluation script ends with <code>os._exit(0)</code> rather than let a destructor error turn a normal finish into a crash.</p>
+<h2>Episode 10, stuck at step 291</h2>
+<p>Episodes are numbered from 0, and 0 through 9 ran without trouble. Episode 10 reached step 291 and the log never moved again. The process was alive, one CPU core was pegged, GPU utilization was 0, and it stayed that way for 25 hours.</p>
+<p>In gdb, the main thread was stuck in the most ordinary of operations: a boolean index like <code>tensor[mask]</code>. PyTorch first has to <code>nonzero</code> to count the elements, then copy that count from device memory back to the host; under <code>hipMemcpyWithStream</code> sits HSA&#x27;s <code>BusyWaitSignal::WaitRelaxed</code>, spinning on a completion signal. The signal never came, and the wait has no timeout. I did not track down why the signal never came, and did only two things: gave the evaluation script a starting-episode parameter so it could carry on from episode 10, and wrapped it in a watchdog that kills the run and retries once if the log has not advanced for 180 seconds, and otherwise skips the episode. The watchdog fired three more times later, and each time the episode it was waiting on already had a complete recording, so the retry was never used.</p>
+<p>The watchdog script had one oversight: it told the evaluation where to start but not where to stop. So every process ran all the way to episode 26, and the next process started over from the following episode. Rerunning 17 episodes took five days.</p>
+<h2>Where the time goes</h2>
+<p>Looking back at the logs after all 27 episodes: one control step took from under 1 second to 10 seconds, with most episodes at a median of about 4 seconds, so 30 seconds of simulation takes close to an hour. The paper reports 5 to 30 FPS on one GPU; this is about 0.25 FPS, one to two orders of magnitude slower.</p>
+<p>A few episodes were clearly fast: episodes 2, 5, 7, 8, 12 and 24 ran at a median of about 1.2 seconds per step, and every one of them failed; 3, 11 and 14 ran at about 3.2 seconds and also failed; none of the 18 successful episodes ran faster than 4 seconds per step. The most likely explanation is contact: when the gripper and the clip do not touch the rope, the mesh-collision queries rarely have any real work to do. The paper itself says speed depends on the contact state.</p>
+<p>The main reason for the slowness is my solver, not the GPU. The rope takes 667 substeps per control step. Upstream&#x27;s Warp version records these 667 substeps into one CUDA graph and replays it once per step. My PyTorch solver does not record a graph; it launches kernels from Python one substep at a time, with several synchronizations that copy boolean results back to the host in between, and with those synchronizations there, it could not be captured into a graph even if I tried. The next step is to remove those synchronizations, merge the substeps into fewer kernels, and then capture them with HIP Graph.</p>
+<h2>18/27, and a number with nothing to compare against</h2>
+<p>With all 27 episodes run and scored by upstream&#x27;s rule: 18 succeed, a success rate of 66.7%. The verdicts are clean: in every successful episode, each of the last 100 frames has both openings threaded; in every failed episode, not one frame does. Nothing sits near the 30-frame threshold.</p>
+<p>The failures are not spread evenly over the grid either. Of the 9 states at an x offset of −5 cm, only 4 succeed; at 0, 6; at +5 cm, 8. Of the 9 states at +10° rotation, only 4 succeed; at 0°, 8. Twenty-seven points cannot say much, but which side of the grid this checkpoint prefers is plain to see.</p>
+<p>Those five wasted days bought an unexpected data set: episodes 16 through 26 were each scored 2 to 11 times, 68 times in all, and not one outcome changed. That is not because the simulation is bit-for-bit reproducible. Run the same episode twice and the rope&#x27;s points in the last frame differ by up to 2 cm. The most likely source is <code>index_add_</code> in the spring forces: on the GPU the order of accumulation differs every run, so the last bits of the floating-point result differ, and a few hundred steps later that is centimeters. A few centimeters either way, whether the rope gets through is still decided by the initial state. Only two episodes showed signs of wavering. In two earlier unscored runs, episode 12 took about 4 seconds per step, inside the band of the successful episodes, while the scored run took 1.16 seconds; episode 14 took 4.03 seconds once and 3.1 to 3.3 seconds the other four times. The recordings of those runs were overwritten before they could be scored, so how they ended cannot be checked. Both sit at the center of the grid, differing only by a ±10° rotation, right where success meets failure.</p>
+<p>Back to 18/27: it cannot be compared with the paper directly. The paper&#x27;s main result is the correlation between simulated and real success rates over a set of checkpoints. The simulated success rate of this one checkpoint, ACT <code>007000</code>, only appears in a figure, with no number in the text, and the repository does not include the real-robot labels. Reproducing 0.901 would take a set of checkpoints and real-robot results. So what this run verifies is that Gaussian rendering, the spring-mass rope and the ACT policy closed the loop on one Radeon card under the official protocol and were scored by the official rule; the correlation itself has not been verified.</p>
+<p>The code is at <a href="https://github.com/charyang-ai/real2sim-eval">https://github.com/charyang-ai/real2sim-eval</a>.</p>
+  </div>
+</article>
+<footer class="site-footer">
+  <span>Charles Yang</span>
+  <a href="https://github.com/worldloop/worldloop.github.io">GitHub</a>
+</footer>
+
+
+</body>
+</html>

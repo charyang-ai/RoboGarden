@@ -10,9 +10,13 @@
 
 | 项目 | 说明 |
 | --- | --- |
+| [Real2Sim-Eval](https://worldloop.github.io/posts/real2sim-eval.html) | 高斯外观加弹簧质点的绳子替真机给策略打分：官方 27 组评测 18 组成功，失败集中在网格一侧，68 次重跑结局不变 |
 | [World Labs Atlas × DM0.5](https://worldloop.github.io/posts/atlas-dm05.html) | 把真实厨房的 3D 高斯重新打光来训练 DM0.5：17 个点的提升在 R9700 与 W7900D 上都复现，同一个种子换台机器五分之一会换结局 |
 | [LeWorldModel](https://worldloop.github.io/posts/le-wm.html) | 一帧压成 192 维向量的 JEPA 世界模型：发布权重在四个环境重评，Two-Room 从头训练 |
 | [MuJoCo 4](https://worldloop.github.io/posts/mujoco4.html) | 弹性杆的小挠度对上悬臂梁公式，塑性铰停在该停的角度 |
+| [Masked Visual Actions](https://worldloop.github.io/posts/masked-visual-actions.html) | 把动作画成视频里露出的像素：同一个 14B 视频模型既当正向模型也当逆向模型，W7900 上补了两处注意力 |
+| [SplatSim](https://worldloop.github.io/posts/splatsim.html) | PyBullet 管物理，两百万个高斯管画面：W7900 重画作者的训练视角最多差一个灰度级，420 条轨迹全部重拍 |
+| [World2Act](https://worldloop.github.io/posts/world2act.html) | 从视频世界模型的潜空间里读动作：2B 老师在 W7900 上走完 35 步校正流，卷积展开表得先腾地方 |
 | [RoboRender](https://worldloop.github.io/posts/roborender.html) | 用视频模型把仿真轨迹画成可学的真实外观 |
 | [WorldScore](https://worldloop.github.io/posts/worldscore.html) | 世界生成基准：相机、物体与三维一致性拆开打分 |
 | [Interactive World Simulator](https://worldloop.github.io/posts/interactive-world-sim.html) | 像素里按动作往下演，不靠物理引擎当裁判 |

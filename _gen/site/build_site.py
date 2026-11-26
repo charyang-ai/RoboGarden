@@ -17,12 +17,15 @@ SITE = "https://worldloop.github.io"
 REPO = "https://github.com/worldloop/worldloop.github.io"
 # Base URL of the analytics Worker in analytics/; empty leaves the view counter out of the pages.
 VIEWS_API = "https://robogarden-views.worldloop.workers.dev"
+# Pages whose prose has \( \) or \[ \] math load KaTeX and render it in the browser.
+KATEX = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist"
 
 TOKEN = re.compile(
     r"`([^`]+)`"
     r"|\[([^\]]+)\]\(([^)]+)\)"
     r"|<(https?://[^>\s]+)>"
     r"|(https?://[^\s<>）)。，、]+)"
+    r"|\*\*([^*]+)\*\*"
 )
 
 LANGS = {
@@ -51,6 +54,56 @@ LANGS = {
 }
 
 POSTS = [
+    {
+        "slug": "real2sim-eval",
+        "tag": "Real2Sim-Eval",
+        "date": "2026-11-26",
+        "date_label": "2026.11.26",
+        "src": {"zh": ROOT / "real2sim-eval.md", "en": ROOT / "en" / "real2sim-eval.md"},
+        "dek": {
+            "zh": "仿真想替真机给策略排名次，画面得对齐到那台相机，绳子的弹性得从视频里辨识出来。在一张 W7900 上跑完 27 组绳子评测：18 组成功，失败扎堆在网格的同一侧。",
+            "en": "For simulation to rank policies the way the real robot does, the picture has to match that camera and the rope's springiness has to be identified from video. On one W7900 the 27-episode rope evaluation ends 18 for 27, with the failures bunched on one side of the grid.",
+        },
+        "thumb": "frame-r2s-ep13.jpg",
+        "figures": [
+            ("r2s-teaser.jpg", {
+                "zh": "同一批策略，仿真成功率和真机成功率排在一条对角线上；三个任务是毛绒玩具装箱、绳子穿夹和推 T 形块。图来自项目页。",
+                "en": "The same policies' success rates in simulation and on the real robot line up along the diagonal; the three tasks are packing a plush toy, threading a rope through a clip, and pushing a T block. Figure from the project page.",
+            }),
+            ("r2s-method.jpg", {
+                "zh": "整套流程：手机扫描、高斯重建、位置和颜色对齐；从人手摆弄物体的视频里辨识出软体数字孪生；最后包成 Gym 接口。图来自项目页。",
+                "en": "The pipeline: a phone scan, Gaussian reconstruction, position and color alignment; a soft-body digital twin identified from a video of hands handling the object; all wrapped in a Gym interface. Figure from the project page.",
+            }),
+            (
+                {"zh": "r2s-grid.png", "en": "r2s-grid_en.png"},
+                {
+                    "zh": "W7900 上 27 个初值的结局，按 x、y 偏移和转角排开，格子里是回合编号。",
+                    "en": "Outcomes of the 27 initial states on the W7900, laid out by x and y offset and by rotation; each cell shows the episode id.",
+                },
+            ),
+            (
+                {"zh": "r2s-steptime.png", "en": "r2s-steptime_en.png"},
+                {
+                    "zh": "每个回合计分那次运行的控制步耗时中位数。失败的回合都在 3.3 秒以下，成功的都在 4 秒以上。",
+                    "en": "Median control-step time of each episode's scored run. Every failed episode is under 3.3 s; every successful one takes 4 s or more.",
+                },
+            ),
+        ],
+        "videos": [
+            ("r2s-sim-vs-real.mp4", "frame-r2s-sim-vs-real.jpg", {
+                "zh": "绳子任务，同一个策略、同一个初值，左边是仿真，右边是真机。视频来自项目页。",
+                "en": "The rope task with the same policy from the same initial state: simulation on the left, the real robot on the right. Video from the project page.",
+            }),
+            ("r2s-ep13.mp4", "frame-r2s-ep13.jpg", {
+                "zh": "W7900 上的 13 号回合（x、y 偏移都是 0，转角 0°）：绳子穿过夹子的两个开口，成功。相机 0，30 秒，900 个控制步。",
+                "en": "Episode 13 on the W7900 (x and y offsets 0, rotation 0°): the rope passes through both openings of the clip, a success. Camera 0, 30 seconds, 900 control steps.",
+            }),
+            ("r2s-ep14.mp4", "frame-r2s-ep14.jpg", {
+                "zh": "14 号回合，位置相同，只多转了 10°：绳子落在夹子旁边，失败。",
+                "en": "Episode 14, same position, rotated 10° more: the rope ends up beside the clip, a failure.",
+            }),
+        ],
+    },
     {
         "slug": "atlas-dm05",
         "tag": "World Labs Atlas",
@@ -176,6 +229,120 @@ POSTS = [
             }),
         ],
         "videos": [],
+    },
+    {
+        "slug": "masked-visual-actions",
+        "tag": "Masked Visual Actions",
+        "date": "2026-11-11",
+        "date_label": "2026.11.11",
+        "src": {"zh": ROOT / "masked-visual-actions.md", "en": ROOT / "en" / "masked-visual-actions.md"},
+        "dek": {
+            "zh": "把机械臂这一路画出来，其余涂灰，剩下的交给视频模型补完：露出机械臂它演世界，露出杯子它演机器人。在 W7900 上，SDPA 这条退路成了主路，VAE 里悄悄算错的注意力换回了精确内核。",
+            "en": "Draw the arm's path, gray out the rest, and let a video model fill in the world: show it the arm and it plays the world, show it the cup and it plays the robot. On a W7900 the SDPA fallback became the main road, and a quietly wrong attention in the VAE went back to the exact kernel.",
+        },
+        "thumb": "frame-mva-towel.jpg",
+        "figures": [
+            ("mva-towel.jpg", {
+                "zh": "毛巾片段（真机 Franka，定制夹爪），从上到下：遮罩视觉动作、W7900 的生成、作者的生成、真实视频。控制视频里画的是标准 Franka 夹爪，生成的却是参考帧里那对绿色 3D 打印手指；毛巾掀起后，W7900 这一版把露出来的桌面画成了一块木板。",
+                "en": "The towel clip (a real Franka with custom fingers), top to bottom: the masked visual action, the W7900 generation, the authors' generation, the real video. The control video draws a standard Franka gripper, yet the generations show the green 3D-printed fingers from the reference frame; once the towel is lifted, the W7900 run paints the uncovered table as a wooden board.",
+            }),
+            ("mva-behavior.jpg", {
+                "zh": "BEHAVIOR 片段（R1 Pro，训练时没见过的双臂机器人），同样四行：遮罩视觉动作、W7900、作者、真实视频。",
+                "en": "The BEHAVIOR clip (an R1 Pro, a two-armed robot never seen in training), in the same four rows: masked visual action, W7900, authors, real video.",
+            }),
+            ("mva-towel-patches.jpg", {
+                "zh": "同一个种子下两个补丁的作用。从上到下：上游原样；只打 SDPA 排布补丁，和上一行平均只差 1.3 个灰度级；再把 VAE 里头维度 384 的注意力换成精确内核，毛巾掀起后露出的桌面变成了木板；作者的生成；真实视频。",
+                "en": "What the two patches do with the same seed. Top to bottom: upstream as pinned; the SDPA layout patch alone, a mean of 1.3 gray levels from the row above; the head-dim-384 attention in the VAE also routed to the exact kernel, after which the table under the lifted towel becomes a wooden board; the authors' generation; the real video.",
+            }),
+        ],
+        "videos": [
+            ("mva-towel.mp4", "frame-mva-towel.jpg", {
+                "zh": "W7900 上生成的毛巾片段，两个补丁都打上：832×480，81 帧，15 fps，50 步。",
+                "en": "The towel clip generated on the W7900 with both patches: 832×480, 81 frames at 15 fps, 50 steps.",
+            }),
+            ("mva-behavior.mp4", "frame-mva-behavior.jpg", {
+                "zh": "W7900 上生成的 BEHAVIOR 片段（R1 Pro）。",
+                "en": "The BEHAVIOR clip (R1 Pro) generated on the W7900.",
+            }),
+        ],
+    },
+    {
+        "slug": "splatsim",
+        "tag": "SplatSim",
+        "date": "2026-11-05",
+        "date_label": "2026.11.05",
+        "src": {"zh": ROOT / "splatsim.md", "en": ROOT / "en" / "splatsim.md"},
+        "dek": {
+            "zh": "物理留给 PyBullet，画面换成真实场景的两百万个高斯，按关节角搬家。在 W7900 上重画作者的训练视角，和 CUDA 版最多差一个灰度级；420 条轨迹全部重拍。",
+            "en": "Physics stays in PyBullet; the picture becomes two million Gaussians of the real scene, moved by joint angle. Redrawn on a W7900, the authors' training views differ from their CUDA renders by at most one gray level, and all 420 trajectories are reshot.",
+        },
+        "thumb": "frame-ss-trajectory0.jpg",
+        "figures": [
+            ("ss-render-check.jpg", {
+                "zh": "同一份 2,192,636 个高斯的 splat、同一个训练视角。左上是 W7900 画的，右上是作者用 CUDA 画的，左下是真实照片，右下是两张渲染图之差，白点是差一个灰度级的像素。两张渲染图之间的 PSNR 是 96.9 dB。",
+                "en": "The same 2,192,636-Gaussian splat from the same training view. Top left: drawn on the W7900. Top right: the authors' CUDA render. Bottom left: the real photo. Bottom right: the difference between the two renders, where white dots are pixels one gray level apart. PSNR between the two renders is 96.9 dB.",
+            }),
+            ("ss-contact-sheet.jpg", {
+                "zh": "W7900 重拍的苹果放盘子数据，抽了六条轨迹，每行一条，从左到右是首帧、三分之一、三分之二和末帧。盘子是那块黑色圆盘，发布的盘子 splat 本来就是这个颜色。",
+                "en": "Six of the apple-on-plate trajectories reshot on the W7900, one per row: first frame, one third, two thirds and last frame. The plate is the black disc; the released plate splat really is that color.",
+            }),
+            ("ss-display.jpg", {
+                "zh": "回放进行到第 2 分钟时那台虚拟显示器的截图：前面是 cv2.imshow 的窗口，两百万个高斯在 W7900 上画；后面是 PyBullet 的 GUI，由 llvmpipe 在 CPU 上画。",
+                "en": "The virtual display two minutes into the replay: in front, the cv2.imshow window, two million Gaussians drawn on the W7900; behind it, the PyBullet GUI, drawn on the CPU by llvmpipe.",
+            }),
+        ],
+        "videos": [
+            ("ss-trajectory0.mp4", "frame-ss-trajectory0.jpg", {
+                "zh": "第一条轨迹的回放，800×448，15 fps。",
+                "en": "Replay of the first trajectory, 800×448 at 15 fps.",
+            }),
+        ],
+    },
+    {
+        "slug": "world2act",
+        "tag": "World2Act",
+        "date": "2026-11-01",
+        "date_label": "2026.11.01",
+        "src": {"zh": ROOT / "world2act.md", "en": ROOT / "en" / "world2act.md"},
+        "dek": {
+            "zh": "一个会画下一秒的视频模型，潜空间里已经含着动作。先把它的老师请上一张 W7900：35 步校正流画完一段芒果，前提是给 25.6 GiB 的卷积展开表腾出地方。",
+            "en": "A video model that can draw the next second already carries actions in its latents. First its teacher moves onto one W7900: 35 rectified-flow steps paint the mango clip, once a 25.6 GiB convolution table is given room.",
+        },
+        "thumb": "frame-w2a-robocasa.jpg",
+        "figures": [
+            ("w2a-motivation.jpg", {
+                "zh": "左边是常见的像素空间后训练，从想象出来的画面里反推伪动作或奖励；中间是 World2Act，直接在潜空间里对齐；右边是 RoboCasa 成功率随后训练轨迹数的变化。图来自项目页（论文图 1）。",
+                "en": "Left: the usual pixel-space post-training, which recovers pseudo-actions or rewards from imagined frames. Middle: World2Act, which aligns in latent space directly. Right: RoboCasa success rate against the number of post-training trajectories. Figure from the project page (Fig. 1 of the paper).",
+            }),
+            ("w2a-method.jpg", {
+                "zh": "(a) 第一阶段，视频适配器和动作适配器把世界模型潜变量和专家动作块映射到同一个共享空间，动作解码器负责重建；(b) 第二阶段，冻住世界模型、VLA 和第一阶段的模块，只训一个残差策略。图来自项目页（论文图 2）。",
+                "en": "(a) Stage one: a video adapter and an action adapter map world-model latents and expert action chunks into one shared space, and an action decoder reconstructs the actions. (b) Stage two: the world model, the VLA and the stage-one modules are frozen and only a residual policy is trained. Figure from the project page (Fig. 2 of the paper).",
+            }),
+            ("w2a-imagine-vs-real.jpg", {
+                "zh": "上排是世界模型想象的关微波炉，下排是 GR00T-N1.6-ft + World2Act 在真机上的执行。作者指出，想象的最后一帧里把手消失了，真机照样把门关上。图来自项目页。",
+                "en": "Top: the world model imagining a microwave being closed. Bottom: GR00T-N1.6-ft + World2Act doing the task on the real robot. The authors point out that the handle vanishes in the last imagined frame and the robot still closes the door. Figure from the project page.",
+            }),
+            (
+                {"zh": "frame-w2a-mango.jpg", "en": "frame-w2a-mango_en.jpg"},
+                {
+                    "zh": "这次在 W7900 上生成的 93 帧里抽出 6 帧。第 0 帧就是条件图；一秒之内，左半边被画成白色橱柜、两只芒果和一只伸进来的夹爪，右半边一直是色块。",
+                    "en": "Six of the 93 frames generated on the W7900. Frame 0 is the conditioning image; within a second the left half becomes white cabinets, two mangoes and a gripper reaching in, while the right half stays blocks of color.",
+                },
+            ),
+            (
+                {"zh": "w2a-memory.png", "en": "w2a-memory_en.png"},
+                {
+                    "zh": "改之前，上一层的展开表还占着 24.7 GiB，下一层要的 25.6 GiB 放不下；卷积前清一次缓存，活张量加这一层的表一共 34 GiB 出头。",
+                    "en": "Before the fix, the previous layer's unfolded table still holds 24.7 GiB, and the 25.6 GiB the next layer needs does not fit; emptying the cache before the convolution leaves the live tensors plus this layer's table at a little over 34 GiB.",
+                },
+            ),
+        ],
+        "videos": [
+            ("w2a-robocasa.mp4", "frame-w2a-robocasa.jpg", {
+                "zh": "这次生成的视频：一张条件图加一句“pick the mango from the cabinet”，35 步校正流，93 帧，16 fps。",
+                "en": "The video generated this time: one conditioning image plus \"pick the mango from the cabinet\", 35 rectified-flow steps, 93 frames at 16 fps.",
+            }),
+        ],
     },
     {
         "slug": "roborender",
@@ -335,6 +502,8 @@ def inline(text: str) -> str:
         elif match.group(2) is not None:
             href = html.escape(match.group(3), quote=True)
             out.append(f'<a href="{href}">{html.escape(match.group(2))}</a>')
+        elif match.group(6) is not None:
+            out.append(f"<strong>{inline(match.group(6))}</strong>")
         else:
             href = html.escape(match.group(4) or match.group(5), quote=True)
             out.append(f'<a href="{href}">{href}</a>')
@@ -370,9 +539,24 @@ def markdown_to_html(path: Path) -> tuple[str, str]:
     for block in blocks:
         if block.startswith("## "):
             parts.append(f"<h2>{inline(block[3:].strip())}</h2>")
+        elif all(line.startswith("|") for line in block.splitlines()):
+            parts.append(table(block))
         else:
             parts.append(f"<p>{inline(block)}</p>")
     return title, "\n".join(parts)
+
+
+def table(block: str) -> str:
+    """A pipe table: header row, a --- rule (a trailing colon right-aligns the column), then body rows."""
+    rows = [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in block.splitlines()]
+    head, rule, body = rows[0], rows[1], rows[2:]
+    classes = [' class="num"' if cell.endswith(":") else "" for cell in rule]
+
+    def row(cells: list[str], tag: str) -> str:
+        return "<tr>" + "".join(f"<{tag}{classes[i]}>{inline(c)}</{tag}>" for i, c in enumerate(cells)) + "</tr>"
+
+    body_rows = "\n".join(row(r, "td") for r in body)
+    return f'<div class="table-wrap"><table>\n<thead>{row(head, "th")}</thead>\n<tbody>\n{body_rows}\n</tbody>\n</table></div>'
 
 
 def poster(src: Path, dest: Path, ss: str = "2") -> None:
@@ -394,13 +578,20 @@ def copy_file(src: Path, dest: Path) -> None:
     shutil.copy2(src, dest)
 
 
-def page(lang: str, rel: str, title: str, description: str, body: str, root: str) -> str:
+def page(lang: str, rel: str, title: str, description: str, body: str, root: str, math: bool = False) -> str:
     alternates = "\n".join(
         f'  <link rel="alternate" hreflang="{LANGS[code]["html_lang"]}" href="{SITE}/{LANGS[code]["prefix"]}{rel}">'
         for code in LANGS
     )
     views_attr = f' data-views-api="{html.escape(VIEWS_API, quote=True)}"' if VIEWS_API else ""
     views_script = f'\n  <script src="{root}views.js" defer></script>' if VIEWS_API else ""
+    if math:
+        views_script += (
+            f'\n  <link rel="stylesheet" href="{KATEX}/katex.min.css">'
+            f'\n  <script src="{KATEX}/katex.min.js" defer></script>'
+            f'\n  <script src="{KATEX}/contrib/auto-render.min.js" defer'
+            f' onload="renderMathInElement(document.querySelector(\'.prose\'))"></script>'
+        )
     return f"""<!DOCTYPE html>
 <html lang="{LANGS[lang]['html_lang']}"{views_attr}>
 <head>
@@ -491,6 +682,13 @@ def prepare_local_media() -> None:
         raise SystemExit(f"missing source media: {atlas}")
     for src in sorted(atlas.iterdir()):
         copy_file(src, WORK / f"atlas-{src.name}")
+    # These notes write their media under _gen/<slug>/images with the post's prefix already in the names.
+    for slug in ("world2act", "splatsim", "masked-visual-actions", "real2sim-eval"):
+        images = Path(__file__).resolve().parents[1] / slug / "images"
+        if not images.exists():
+            raise SystemExit(f"missing source media: {images}")
+        for src in sorted(images.iterdir()):
+            copy_file(src, WORK / src.name)
 
 
 def fig_file(name, lang: str) -> str:
@@ -604,8 +802,9 @@ def build_lang(lang: str) -> None:
 </article>
 {footer()}
 """
+        math = "\\(" in post["prose"] or "\\[" in post["prose"]
         (posts_dir / f"{post['slug']}.html").write_text(
-            page(lang, rel, f"{post['title']} · RoboGarden", post["dek"], body, post_root),
+            page(lang, rel, f"{post['title']} · RoboGarden", post["dek"], body, post_root, math),
             encoding="utf-8",
         )
         print(lang, post["slug"], "ok")

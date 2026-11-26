@@ -209,6 +209,13 @@ figcaption {
   padding: 0.08em 0.35em;
   border-radius: 5px;
 }
+.prose strong { font-weight: 650; }
+.table-wrap { overflow-x: auto; margin: 0.4em 0 1.4em; }
+.prose table { width: 100%; border-collapse: collapse; font-size: 0.95rem; line-height: 1.5; }
+.prose th, .prose td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.prose th { font-weight: 650; border-bottom: 1.5px solid var(--ink); }
+.prose th.num, .prose td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prose .katex-display { overflow-x: auto; overflow-y: hidden; }
 
 @media (max-width: 800px) {
   .grid { grid-template-columns: 1fr; }

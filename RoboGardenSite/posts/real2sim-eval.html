@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-views-api="https://robogarden-views.worldloop.workers.dev">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>【一卡一世界】仿真想替真机打分，绳子得软，颜色得像那台相机 | ICRA 2026 Real2Sim-Eval论文复现笔记 · RoboGarden</title>
+  <meta name="description" content="仿真想替真机给策略排名次，画面得对齐到那台相机，绳子的弹性得从视频里辨识出来。在一张 W7900 上跑完 27 组绳子评测：18 组成功，失败扎堆在网格的同一侧。">
+  <meta name="author" content="Charles Yang">
+  <link rel="alternate" hreflang="zh-CN" href="https://worldloop.github.io/posts/real2sim-eval.html">
+  <link rel="alternate" hreflang="en" href="https://worldloop.github.io/en/posts/real2sim-eval.html">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../views.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <a class="wordmark" href="../index.html">Robo<span>Garden</span></a>
+  <nav class="site-nav">
+    <a class="lang-switch" href="../en/posts/real2sim-eval.html" hreflang="en" lang="en" title="English">EN</a>
+    <a class="who" href="../index.html">Charles Yang</a>
+  </nav>
+</header>
+
+<article class="post" data-slug="real2sim-eval">
+  <a class="back" href="../index.html">← 全部笔记</a>
+  <p class="kicker">Real2Sim-Eval · 2026.11.26</p>
+  <h1>【一卡一世界】仿真想替真机打分，绳子得软，颜色得像那台相机 | ICRA 2026 Real2Sim-Eval论文复现笔记</h1>
+  <p class="byline"><strong>Charles Yang</strong><span class="views" data-views="real2sim-eval" hidden></span></p>
+  <div class="figures">
+    <figure>
+  <img src="../media/real2sim-eval/r2s-teaser.jpg" alt="同一批策略，仿真成功率和真机成功率排在一条对角线上；三个任务是毛绒玩具装箱、绳子穿夹和推 T 形块。图来自项目页。">
+  <figcaption>同一批策略，仿真成功率和真机成功率排在一条对角线上；三个任务是毛绒玩具装箱、绳子穿夹和推 T 形块。图来自项目页。</figcaption>
+</figure>
+<figure>
+  <img src="../media/real2sim-eval/r2s-method.jpg" alt="整套流程：手机扫描、高斯重建、位置和颜色对齐；从人手摆弄物体的视频里辨识出软体数字孪生；最后包成 Gym 接口。图来自项目页。">
+  <figcaption>整套流程：手机扫描、高斯重建、位置和颜色对齐；从人手摆弄物体的视频里辨识出软体数字孪生；最后包成 Gym 接口。图来自项目页。</figcaption>
+</figure>
+<figure>
+  <img src="../media/real2sim-eval/r2s-grid.png" alt="W7900 上 27 个初值的结局，按 x、y 偏移和转角排开，格子里是回合编号。">
+  <figcaption>W7900 上 27 个初值的结局，按 x、y 偏移和转角排开，格子里是回合编号。</figcaption>
+</figure>
+<figure>
+  <img src="../media/real2sim-eval/r2s-steptime.png" alt="每个回合计分那次运行的控制步耗时中位数。失败的回合都在 3.3 秒以下，成功的都在 4 秒以上。">
+  <figcaption>每个回合计分那次运行的控制步耗时中位数。失败的回合都在 3.3 秒以下，成功的都在 4 秒以上。</figcaption>
+</figure>
+  </div>
+  <div class="videos">
+    <figure>
+  <video controls playsinline preload="metadata" poster="../media/real2sim-eval/frame-r2s-sim-vs-real.jpg">
+    <source src="../media/real2sim-eval/r2s-sim-vs-real.mp4" type="video/mp4">
+  </video>
+  <figcaption>绳子任务，同一个策略、同一个初值，左边是仿真，右边是真机。视频来自项目页。</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../media/real2sim-eval/frame-r2s-ep13.jpg">
+    <source src="../media/real2sim-eval/r2s-ep13.mp4" type="video/mp4">
+  </video>
+  <figcaption>W7900 上的 13 号回合（x、y 偏移都是 0，转角 0°）：绳子穿过夹子的两个开口，成功。相机 0，30 秒，900 个控制步。</figcaption>
+</figure>
+<figure>
+  <video controls playsinline preload="metadata" poster="../media/real2sim-eval/frame-r2s-ep14.jpg">
+    <source src="../media/real2sim-eval/r2s-ep14.mp4" type="video/mp4">
+  </video>
+  <figcaption>14 号回合，位置相同，只多转了 10°：绳子落在夹子旁边，失败。</figcaption>
+</figure>
+  </div>
+  <div class="prose">
+    <p>给机器人策略打分，最诚实的办法是让它在真机上一遍遍地做。可真机评测又慢又难复现：每一回合都要有人把绳子摆回原位，摆得准不准全凭手感；同一个检查点今天成功、明天失败，你分不清是策略不稳，还是绳子换了个弯。训练越来越快，评测成了最慢的那一环。</p>
+<p>仿真本来可以接这份活，却很少有人敢拿它来评测，因为仿真里表现好的策略，到了真机上未必好。Columbia、SceniX 和 Google DeepMind 的 Kaifeng Zhang、Shuo Sha、Hanxiao Jiang、Matthew Loper、Hyunjong Song、Guangyan Cai、Zhuo Xu、Xiaochen Hu、Changxi Zheng 和 Yunzhu Li 想回答的是：什么样的仿真器，才能把策略的好坏排得和真机一样。论文发在 ICRA 2026，代码、数据和检查点都公开了。</p>
+<h2>评测要的是排序</h2>
+<p>这篇论文要的不是一个好看的仿真器，而是一个统计意义上的承诺。同一批策略和检查点，在仿真里和真机上各跑一遍同一组初值，得到两组成功率，再看两者的皮尔逊相关系数，以及沿用 SIMPLER 的 MMRV（排名会错位多少）。策略只用真机示范训练，一条仿真数据都不掺。仿真器只需要回答一件事：哪个检查点更好。</p>
+<p>作者认为仿真和真实之间隔着两道缝：外观和动力学。策略看的是相机画面，画面不像，判断就跟着偏；物体动得不像，同一个动作的后果也就不一样。三个任务专挑动力学难的：把毛绒玩具装进盒子，把一根绳子穿过夹子的两个开口，把 T 形块推到目标位置。前两个是软体，传统仿真调几个全局参数根本对不上。</p>
+<h2>外观：一部 iPhone，和一个二次多项式</h2>
+<p>外观用 3D 高斯泼溅（3DGS）。拿 iPhone 上的 Scaniverse 绕工作台扫一圈，得到机器人、桌子和背景的高斯模型；每个物体再单独扫一次，然后在 SuperSplat 里把它们切开。一个任务只扫这一次。</p>
+<p>扫出来的高斯还得对齐到机器人的坐标系。物体对齐到 PhysTwin 的粒子；机器人从 URDF 的每个连杆采 2000 个表面点，用 ICP 加 RANSAC 求变换，背景和机器人是一起扫的，直接沿用同一个变换。每个高斯核再按最近邻继承一个连杆编号，机械臂一动，它就跟着那节连杆走，夹爪也能张合。</p>
+<p>接下来是一个容易被忽略的细节：颜色。高斯继承的是 iPhone 的颜色，策略训练时看的却是 RealSense 的画面，而 RealSense 本来就偏色。绿幕合成（SIMPLER 的做法）在第三人称相机上还能糊弄过去，碰上装在手腕上的相机就露馅了。作者在固定相机的位姿上，把高斯渲染图和真实相机拍的图配成对，在 RGB 空间里拟合一个二次多项式，用迭代重加权最小二乘压住离群像素。附录写得很具体：5 张 848×480 的图，Tukey 双权重，迭代 50 次。消融里去掉这一步，绳子任务的相关系数从 0.901 掉到 0.714。仿真要像的不是真实世界，而是那台相机眼里的真实世界。</p>
+<h2>动力学：一根绳子，两千个质点</h2>
+<p>软体动力学交给 PhysTwin。它把物体表示成质点和弹簧：距离在阈值内的质点之间连一根弹簧，每根弹簧有自己的刚度。这些参数从一段人手摆弄物体的视频里优化出来：跟踪手的关键点，当作控制点接进弹簧系统，调参数让仿真里的物体运动对上视频。这次跑的绳子是 2002 个质点、17048 根弹簧。</p>
+<p>抓取的写法很讲究。很多仿真为了稳，会把物体的点直接焊在夹爪上；这里接触只靠摩擦，夹爪的碰撞力超过阈值就停止闭合，抓不抓得住由摩擦说了算。高斯跟着粒子走：刚体按刚体变换更新，软体用线性混合蒙皮（LBS）。物理求解跑在 NVIDIA Warp 上，作者报告单卡 5 到 30 FPS，快慢取决于有没有接触。</p>
+<p>去掉逐弹簧的刚度、只用一个全局刚度，绳子任务的相关系数从 0.901 降到 0.832。拿 IsaacLab 把绳子近似成一串铰接链条做对照，只有 0.237。</p>
+<h2>考场规则</h2>
+<p>评测协议照 Kress-Gazit 等人的建议来：每个任务固定一组初值，仿真和真机用同一组。真机那边有个实时叠加工具，把仿真里的初始状态画在相机画面上，操作员照着把物体摆过去。绳子任务的初值是一个 3×3×3 的网格：x、y 各偏移 −5 到 5 厘米，转角 −10 到 10 度，一共 27 组，每组 30 秒。</p>
+<p>真机的成败由人判，仿真里用特权状态自动判。绳子算成功，要求夹子的两个开口各有超过 100 根弹簧段穿过，并且在最后 100 帧（3.3 秒）里维持超过 30 帧。三个任务上，完整方法的相关系数分别是 0.944（装箱）、0.901（绳子）和 0.915（推 T）。</p>
+<p>论文对局限也说得算坦白。逐检查点的成功率只画在图里，正文没有列表。回放实验把同一段真机动作原样放进仿真，绳子的 405 条里仍有 52 条结果和真机不一致。作者还点名，绳子任务上 ACT 的绝对成功率仿真和真机对不齐，只是趋势一致。所以它证明的是排序可信，不是每一条轨迹都对。</p>
+<h2>在 W7900 上，Warp 先过不了关</h2>
+<p>这次用的是一张 AMD Radeon Pro W7900D（gfx1100，48 GB），镜像是 ROCm 7.14 加 PyTorch 2.11，容器里只挂这张卡的渲染节点。跑的是 README 里的示例：绳子任务，ACT 检查点 <code>007000</code>，也就是训练 7000 步的最后一个检查点；27 组初值，每组 30 秒，最后用仓库自带的 <code>calculate_success_rope.py</code> 打分。</p>
+<p>第一个拦路的是 Warp。Warp 1.7 用 NVRTC 现场编译内核，没有 gfx1100 这个目标。我把弹簧质点求解器用 PyTorch 重写了一遍，保留 <code>phystwin.py</code> 调用的那几个入口。弹簧力用 <code>index_add_</code> 累加；自碰撞的邻居搜索不用哈希网格，直接 <code>cdist</code> 再取 top-k；和夹爪、夹子网格的碰撞最费心：先在 2 厘米内找三角形上的最近点（Ericson 的那套最近点算法），再用广义缠绕数判断点在网格内外，阈值照原来的 0.6。Warp 自己用 BVH 近似这个缠绕数，这里的网格只有几千个三角形，我直接精确求和。</p>
+<p>高斯光栅化器是标准的 CUDA 扩展，改动反倒都很机械：CUB 换成 hipCUB，<code>GLM_FORCE_CUDA</code> 换成 <code>GLM_FORCE_HIP</code>，<code>cooperative_groups.h</code> 指向 HIP 的同名实现，<code>__trap()</code> 换成 <code>__builtin_trap()</code>。最好笑的一处是 hipcc 不接受内核启动语法里多出来的空格，<code>&lt;&lt; &lt;</code> 得写成 <code>&lt;&lt;&lt;</code>。</p>
+<p>Sapien 是另一类麻烦。项目只用它解析 URDF、算正逆运动学，画面全由高斯负责，可 Sapien 3 一建场景就去开 Vulkan，而容器里有渲染节点、没有 Vulkan 驱动，进程直接中止。补丁让场景只建 PhysX 的 CPU 系统，加载 URDF 时丢掉可视网格；顺手补回 Sapien 2 的 <code>Pose.from_transformation_matrix</code>，再绕开 transforms3d 0.4.2 在 NumPy 2 上因为 <code>copy=False</code> 报的错。gradio 只在可视化时用，改成用到时再导入。最后，进程退出时 Sapien 和 Open3D 的析构会报 <code>free(): invalid pointer</code>，而那时视频早已写完，评测脚本就在末尾直接 <code>os._exit(0)</code>，免得一个析构错误把正常结束盖成崩溃。</p>
+<h2>10 号回合，停在第 291 步</h2>
+<p>回合从 0 开始编号，0 到 9 号顺利跑完。10 号回合跑到第 291 步，日志就再也没动过。进程还活着，CPU 占满一个核，GPU 利用率是 0，就这样过了 25 个小时。</p>
+<p>用 gdb 看主线程，它卡在一个再普通不过的操作里：<code>tensor[mask]</code> 这样的布尔下标。PyTorch 要先 <code>nonzero</code> 数出有几个元素，再把这个数从显存拷回主机；<code>hipMemcpyWithStream</code> 底下是 HSA 的 <code>BusyWaitSignal::WaitRelaxed</code>，一直在空等一个完成信号。信号没回来，等待也没有超时。这次没有追到信号为什么没回来，只做了两件事：给评测脚本加一个起始回合的参数，从 10 号回合接着跑；再套一个看门狗，日志 180 秒不前进就杀掉重试一次，还不行就跳过这一组。看门狗后来又出手三次，每次它等的那一组都已经有一段完整的录像，重试一次也没用上。</p>
+<p>这个看门狗脚本有个疏忽：它告诉评测从哪一组开始，却没告诉它在哪一组停。于是每个进程都一路跑到 26 号，下一个进程再从下一组从头来过。17 组补跑，跑了五天。</p>
+<h2>慢在哪里</h2>
+<p>27 组跑完以后回头看日志，一个控制步快的不到 1 秒，慢的 10 秒，多数回合的中位数在 4 秒上下，一组 30 秒的仿真要跑将近一个小时。论文说单卡 5 到 30 FPS，这里大约 0.25 FPS，差了一到两个数量级。</p>
+<p>有几组明显快：2、5、7、8、12、24 号回合，中位数约 1.2 秒一步，这几组全都失败了；3、11、14 号约 3.2 秒，也都失败了；18 个成功的回合，没有一个快过 4 秒一步。最可能的解释是接触：夹爪和夹子碰不到绳子，网格碰撞那段查询就很少真正干活；论文自己也说，速度随接触状态变化。</p>
+<p>慢的主要原因在我这版求解器，而不在显卡。绳子每个控制步要走 667 个子步。上游的 Warp 版把这 667 个子步录成一张 CUDA Graph，每步回放一次；我这版 PyTorch 求解器没有录图，只能在 Python 里一个子步一个子步地发内核，中间还夹着好几次把布尔结果拷回主机的同步，有这些同步在，想录也录不进图里。下一步是先去掉这些同步、把子步合并成更少的内核，再用 HIP Graph 录下来。</p>
+<h2>18/27，和一个没法对的数</h2>
+<p>27 组都跑完，用上游的判定脚本打分：18 组成功，成功率 66.7%。判定结果很干脆：成功的回合，最后 100 帧里每一帧都满足两个开口都穿过；失败的回合一帧都没有，没有贴着 30 帧门槛的情况。</p>
+<p>失败也不是均匀撒在网格上的。x 偏移 −5 厘米的 9 组只成了 4 组，0 成了 6 组，+5 厘米成了 8 组；转角 +10° 的 9 组只成了 4 组，0° 成了 8 组。27 个点说明不了太多，但这份权重偏爱哪一侧的初值，看得很清楚。</p>
+<p>那五天的冤枉路，倒换来一组意外的数据：16 到 26 号每组被打了 2 到 11 次分，一共 68 次，结局一次没变。这不是因为仿真能逐位复现。同一组跑两次，最后一帧绳子上的点最多差 2 厘米，最可能的来源是弹簧力的 <code>index_add_</code>：GPU 上每次累加的顺序不一样，浮点的末位就不一样，几百步之后就成了厘米。差这几厘米，绳子穿不穿得过去，还是初值说了算。只有两组露出摇摆的迹象。12 号在前两次没打分的运行里每步约 4 秒，落在成功回合的区间，打了分的那次是 1.16 秒；14 号有一次是 4.03 秒，另外四次在 3.1 到 3.3 秒之间。那几次的录像在打分前就被覆盖了，结局无从查证。它们恰好都在网格正中，只差 ±10° 的转角，正是成败交界的地方。</p>
+<p>回到 18/27 这个数，它没法和论文直接对。论文的主结果是一批检查点的仿真与真机成功率之间的相关系数，ACT <code>007000</code> 这一个点的仿真成功率只画在图里，正文没有给数，仓库也没有放出真机标签。要复现 0.901，得跑一批检查点，还得有真机结果。所以这次验证到的是：高斯渲染、弹簧质点和 ACT 策略在一张 Radeon 上闭环跑完了官方协议，并按官方规则打出了分；相关系数这一层还没有验证。</p>
+<p>代码在 <a href="https://github.com/charyang-ai/real2sim-eval">https://github.com/charyang-ai/real2sim-eval</a>。</p>
+  </div>
+</article>
+<footer class="site-footer">
+  <span>Charles Yang</span>
+  <a href="https://github.com/worldloop/worldloop.github.io">GitHub</a>
+</footer>
+
+
+</body>
+</html>
