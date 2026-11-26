@@ -55,6 +55,39 @@ LANGS = {
 
 POSTS = [
     {
+        "slug": "hy-world-2",
+        "tag": "HY-World 2.0",
+        "date": "2026-11-26",
+        "date_label": "2026.11.26",
+        "src": {"zh": ROOT / "hy-world-2.md", "en": ROOT / "en" / "hy-world-2.md"},
+        "dek": {
+            "zh": "不拍电影，直接盖房子：一张照片先画成全景图，再一路补成能进引擎的 3D 世界。重建一张 W7900 就够；全景图要 59 GiB，这回一张卡装不下。",
+            "en": "Not a movie but a house: one photo becomes a panorama, then a 3D world an engine can load. Reconstruction needs one W7900; the panorama needs 59 GiB, and this time one card is not enough.",
+        },
+        "thumb": "hw2-pano.jpg",
+        "figures": [
+            ("hw2-pano.jpg", {
+                "zh": "三张 W7900 上生成的全景图：上游 Landmark 示例照片，1952×960，40 步，种子 42，CFG 并行，解码不分块。这张图是 HY-World 2.0 的输出，受腾讯社区许可证约束。",
+                "en": "The panorama generated on three W7900s: upstream's Landmark example photo, 1952×960, 40 steps, seed 42, CFG parallel, untiled decode. The image is Output of HY-World 2.0 and falls under Tencent's community license.",
+            }),
+            (
+                {"zh": "hw2-timing.png", "en": "hw2-timing_en.png"},
+                {
+                    "zh": "左：全景图每步耗时，多一张卡跑 CFG 的无提示词那一遍，时间几乎减半，第四张卡多不出活。右：重建在多卡上反而更慢，每张卡都放一整份模型，视图之间还要过 PCIe。",
+                    "en": "Left: panorama time per step; one more card for the CFG pass without the prompt almost halves it, and a fourth card adds nothing. Right: reconstruction gets slower on more cards, since every card holds the full model and the views talk over PCIe.",
+                },
+            ),
+            (
+                {"zh": "hw2-sky.jpg", "en": "hw2-sky_en.jpg"},
+                {
+                    "zh": "同一片天空放大两倍。分块解码在平坦的蓝天里留下一排排规则的蓝点，不分块就没有；独立卡上 VAE 有自己的一张卡，不分块的峰值 24.9 GiB 放得下。",
+                    "en": "The same patch of sky at 2×. The tiled decode leaves rows of regular blue dots in flat sky and the untiled one does not; on discrete cards the VAE has a card of its own, and the untiled peak of 24.9 GiB fits.",
+                },
+            ),
+        ],
+        "videos": [],
+    },
+    {
         "slug": "real2sim-eval",
         "tag": "Real2Sim-Eval",
         "date": "2026-11-26",
@@ -683,7 +716,7 @@ def prepare_local_media() -> None:
     for src in sorted(atlas.iterdir()):
         copy_file(src, WORK / f"atlas-{src.name}")
     # These notes write their media under _gen/<slug>/images with the post's prefix already in the names.
-    for slug in ("world2act", "splatsim", "masked-visual-actions", "real2sim-eval"):
+    for slug in ("world2act", "splatsim", "masked-visual-actions", "real2sim-eval", "hy-world-2"):
         images = Path(__file__).resolve().parents[1] / slug / "images"
         if not images.exists():
             raise SystemExit(f"missing source media: {images}")
